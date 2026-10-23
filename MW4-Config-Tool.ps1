@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'MW4 Config Tool'
-$ToolVersion     = '1.0.0'
+$ToolVersion     = '1.0.1'
 $SystemFileName  = 's.1.0.cod26.txt'      # graphics / display / system settings (per PC)
 $AccountFileName = 'g.cod26.1.0.l.txt'    # audio / mouse / FOV settings (per account, in a sub folder)
 $GameProcess     = 'cod'                  # cod.exe
@@ -79,14 +79,24 @@ function Write-CodFile($File, $Changes) {
 }
 
 # Checks a new value against the game's own "// one of ..." or "// x to y" comment for that line.
+function ConvertTo-PositiveInt($Text) {
+    if ($null -eq $Text) { return $null }
+    $s = ([string]$Text).Trim()
+    if ($s -notmatch '^\d{1,9}$') { return $null }
+    $n = [int]$s
+    if ($n -gt 0) { return $n }
+    return $null
+}
+
 function Test-CodValue([string]$Comment, [string]$Value) {
     if (-not $Comment) { return $true }
     $m = [regex]::Match($Comment, '//\s*one of (.+)$')
     if ($m.Success) { return (($m.Groups[1].Value.Trim() -split ',\s*') -ccontains $Value) }
     $m = [regex]::Match($Comment, '//\s*(-?[\d.]+) to (-?[\d.]+)')
     if ($m.Success) {
-        $d = 0.0
-        if (-not [double]::TryParse($Value, [Globalization.NumberStyles]::Float, $Inv, [ref]$d)) { return $false }
+        # No TryParse/[ref] here: Windows PowerShell 5.1 can fail with "Argument types do not match" on it.
+        if ($Value -notmatch '^\s*-?\d+(\.\d+)?\s*$') { return $false }
+        $d = [double]::Parse($Value, $Inv)
         return ($d -ge [double]::Parse($m.Groups[1].Value, $Inv) -and $d -le [double]::Parse($m.Groups[2].Value, $Inv))
     }
     return $true
@@ -197,7 +207,8 @@ function Get-HardwareInfo($SysFile) {
 
     if ($v.Contains('LastSavedDriveType@0') -and $v['LastSavedDriveType@0'] -eq 'hdd') { $hw.Drive = 'HDD' }
     if ($v.Contains('DetectedMemoryAmountMB@0')) {
-        $mb = 0; if ([int]::TryParse($v['DetectedMemoryAmountMB@0'], [ref]$mb)) { $hw.RamGB = [int][math]::Round($mb / 1024) }
+        $mb = ConvertTo-PositiveInt $v['DetectedMemoryAmountMB@0']
+        if ($mb) { $hw.RamGB = [int][math]::Round($mb / 1024) }
     }
     return $hw
 }
@@ -553,7 +564,7 @@ if (-not $Files) {
           <Slider x:Name="slHit" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"/>
           <TextBlock Style="{StaticResource Lbl}" Text="Extras"/>
           <CheckBox x:Name="chkHdr" Content="HDR on (needs an HDR monitor)"/>
-          <CheckBox x:Name="chkPrio" Content="High CPU priority for cod.exe (admin prompt)"/>
+          <CheckBox x:Name="chkPrio" Content="High CPU priority for cod.exe" ToolTip="Sets cod.exe to High priority every launch. Asks for admin."/>
           <CheckBox x:Name="chkRO" Content="Lock graphics file (read-only)"/>
         </StackPanel></ScrollViewer>
       </GroupBox>
@@ -564,10 +575,10 @@ if (-not $Files) {
           <ListView x:Name="lvPreview" Grid.Row="0" BorderBrush="#E5E7EB">
             <ListView.View><GridView>
               <GridViewColumn Header="File" Width="70" DisplayMemberBinding="{Binding File}"/>
-              <GridViewColumn Header="Setting" Width="230" DisplayMemberBinding="{Binding Setting}"/>
-              <GridViewColumn Header="Now" Width="120" DisplayMemberBinding="{Binding Current}"/>
-              <GridViewColumn Header="New" Width="120" DisplayMemberBinding="{Binding New}"/>
-              <GridViewColumn Header="Status" Width="110" DisplayMemberBinding="{Binding Status}"/>
+              <GridViewColumn Header="Setting" Width="190" DisplayMemberBinding="{Binding Setting}"/>
+              <GridViewColumn Header="Now" Width="95" DisplayMemberBinding="{Binding Current}"/>
+              <GridViewColumn Header="New" Width="95" DisplayMemberBinding="{Binding New}"/>
+              <GridViewColumn Header="Status" Width="70" DisplayMemberBinding="{Binding Status}"/>
             </GridView></ListView.View>
           </ListView>
           <TextBlock x:Name="tbNotes" Grid.Row="1" TextWrapping="Wrap" Foreground="#4B5563" Margin="0,8,0,0"/>
@@ -616,15 +627,15 @@ function Show-Hardware($hw) {
 
 function Read-Hardware {
     $hw = $script:Hw
-    $i = 0
-    if ([int]::TryParse($ui.tbCores.Text, [ref]$i) -and $i -gt 0) { $hw.Cores = $i }
-    $hw.GpuName = $ui.tbGpu.Text
-    $hw.Vendor  = [string]$ui.cbVendor.SelectedItem.Content
-    $hw.VramGB  = $(if ([int]::TryParse($ui.tbVram.Text, [ref]$i) -and $i -gt 0) { $i } else { $null })
+    $cores = ConvertTo-PositiveInt $ui.tbCores.Text
+    if ($cores) { $hw.Cores = $cores }
+    $hw.GpuName   = $ui.tbGpu.Text
+    $hw.Vendor    = [string]$ui.cbVendor.SelectedItem.Content
+    $hw.VramGB    = ConvertTo-PositiveInt $ui.tbVram.Text
     $m = [regex]::Match($ui.tbRes.Text, '(\d+)\s*[xX]\s*(\d+)')
     if ($m.Success) { $hw.Width = [int]$m.Groups[1].Value; $hw.Height = [int]$m.Groups[2].Value } else { $hw.Width = $null; $hw.Height = $null }
-    $hw.RefreshHz = $(if ([int]::TryParse($ui.tbHz.Text, [ref]$i) -and $i -gt 0) { $i } else { $null })
-    $hw.Drive   = [string]$ui.cbDrive.SelectedItem.Content
+    $hw.RefreshHz = ConvertTo-PositiveInt $ui.tbHz.Text
+    $hw.Drive     = [string]$ui.cbDrive.SelectedItem.Content
     return $hw
 }
 
@@ -633,7 +644,8 @@ function Read-Prefs {
     $p.Goal       = $(if ($ui.rbVis.IsChecked) { 'Visibility' } else { 'FPS' })
     $p.Image      = [string]$ui.cbImage.SelectedItem.Tag
     $p.Cap        = [string]$ui.cbCap.SelectedItem.Tag
-    $i = 0; if ([int]::TryParse($ui.tbCap.Text, [ref]$i)) { $p.CapValue = $i }
+    $capValue = ConvertTo-PositiveInt $ui.tbCap.Text
+    if ($capValue) { $p.CapValue = $capValue }
     $p.Audio      = $(if ($ui.rbSpk.IsChecked) { 'Speakers' } else { 'Headphones' })
     $p.MuteMusic  = [bool]$ui.chkMusic.IsChecked
     $p.Announcer  = [int]$ui.slAnn.Value
@@ -666,7 +678,7 @@ function Update-Preview {
         $prioNow = Test-PriorityReg
         $extra = $(if ([bool]$ui.chkPrio.IsChecked -ne $prioNow) { ' + CPU priority' } else { '' })
         $ui.tbStatus.Text = $(if ($n -eq 0 -and -not $extra) { 'Already tuned - nothing to change.' } else { "$n settings will change$extra." })
-    } catch { $ui.tbStatus.Text = "Error: $($_.Exception.Message)" }
+    } catch { $ui.tbStatus.Text = "Error (line $($_.InvocationInfo.ScriptLineNumber)): $($_.Exception.Message)" }
 }
 
 # Initial state
