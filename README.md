@@ -2,6 +2,8 @@
 
 <img src="assets/banner.svg" alt="g1gGLe'z MW4 Performance Tool" width="100%"/>
 
+<img src="assets/game.png" alt="Call of Duty: Modern Warfare 4" width="120"/>
+
 <br/>
 
 <a href="https://github.com/FiTH-g1gGLe/COD-MW4-Config-Tool/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/DOWNLOAD-LATEST-FF5A1F?style=for-the-badge&logo=github&logoColor=white" alt="Download"/></a>
@@ -192,4 +194,6 @@ which use the same settings format.
 <div align="center">
 <br/>
 <sub>Made by <b>g1gGLe</b> · <b>FiTH Gaming</b> · Fire in the Hole 🔥</sub>
+<br/>
+<sub>Unofficial fan-made tool. Not affiliated with or endorsed by Activision. Call of Duty and Modern Warfare are trademarks of Activision Publishing, Inc.</sub>
 </div>
