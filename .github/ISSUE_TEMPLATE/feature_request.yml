@@ -1,0 +1,11 @@
+name: 💡 Idea / feature request
+description: Suggest a setting or feature
+labels: [enhancement]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: Which setting or feature, and how would it help?
+    validations:
+      required: true

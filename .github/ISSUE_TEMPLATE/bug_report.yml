@@ -1,0 +1,40 @@
+name: 🐞 Bug report
+description: Something isn't working right
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping make the tool better! A screenshot of the window helps a lot.
+  - type: input
+    id: version
+    attributes:
+      label: Tool version
+      description: Shown in the header chip, e.g. v1.7.2
+      placeholder: v1.7.2
+    validations:
+      required: true
+  - type: dropdown
+    id: launcher
+    attributes:
+      label: Launcher
+      options: [Steam, Battle.net, Xbox app / Game Pass, Other]
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: CPU / GPU / monitor
+      placeholder: Ryzen 7 9800X3D / RTX 5080 / 2560x1440 240 Hz
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what did you get instead? Include any error text shown at the bottom of the window.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshot
+    attributes:
+      label: Screenshot
+      description: Drag a screenshot of the tool window here.
