@@ -106,6 +106,9 @@ Optional High CPU priority for `cod.exe`, shader pre-loading on, cloud sync off 
 > [!TIP]
 > If the game asks to *"Set Optimal Settings & Run In Safe Mode"*, always choose **No**. It would undo your tuning.
 
+> [!NOTE]
+> **Auto-updates:** the tool checks for a new version every time it opens. If there is one, hit **UPDATE NOW** and it updates and restarts itself. No re-downloading.
+
 ---
 
 ## 🧠 How it reads your rig
@@ -153,6 +156,7 @@ Optional High CPU priority for `cod.exe`, shader pre-loading on, cloud sync off 
 - **Won't write while the game is running.**
 - **Admin only when needed.** CPU priority is the only thing that asks, and you can untick it.
 - **Mouse, sensitivity, FOV and keybinds are never touched.**
+- **Updates itself** from this page's releases with one click, keeping your settings and backups.
 
 ---
 

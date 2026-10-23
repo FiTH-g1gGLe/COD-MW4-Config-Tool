@@ -22,6 +22,7 @@
 param(
     [switch]$Silent,
     [switch]$DryRun,
+    [switch]$NoUpdateCheck,
     [string]$PlayersPath
 )
 
@@ -32,7 +33,9 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.3.1'
+$ToolVersion     = '1.4.0'
+$ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
+$ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
     Discord  = 'https://discord.gg/Br7z7zBvFb'
     YouTube  = 'https://www.youtube.com/user/FiTHGAMINGOFFICIAL'
@@ -589,6 +592,54 @@ function Set-PriorityReg([bool]$Enable) {
 $Files = Get-CodFiles
 $NoGameMsg = "Couldn't find $SystemFileName in:`n$PlayersPath`n`nLaunch Call of Duty once, wait for the main menu, close it, then run this tool again."
 
+# ---------------------------------------------------------------------------------------------
+#  Updates - checks GitHub for a newer release and installs it in place
+# ---------------------------------------------------------------------------------------------
+$UpdateCheckScript = {
+    param($Url, $ZipName)
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        $r = Invoke-RestMethod -Uri $Url -Headers @{ 'User-Agent' = 'MW4-Config-Tool' } -TimeoutSec 8 -UseBasicParsing
+        $asset = @($r.assets | Where-Object { $_.name -eq $ZipName }) | Select-Object -First 1
+        $dl = ''; if ($asset) { $dl = [string]$asset.browser_download_url }
+        [pscustomobject]@{ Tag = [string]$r.tag_name; Url = $dl; Page = [string]$r.html_url }
+    } catch { $null }
+}
+
+function Test-NewerVersion([string]$Remote, [string]$Local) {
+    $r = $Remote.Trim().TrimStart('v', 'V')
+    if ($r -notmatch '^\d+(\.\d+){1,3}$' -or $Local -notmatch '^\d+(\.\d+){1,3}$') { return $false }
+    return ([version]$r -gt [version]$Local)
+}
+
+function Install-Update($Info) {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    $tmp = Join-Path ([IO.Path]::GetTempPath()) ('MW4Tool_' + [guid]::NewGuid().ToString('N'))
+    New-Item -ItemType Directory -Path $tmp | Out-Null
+    try {
+        $zip = Join-Path $tmp $ReleaseZip
+        Invoke-WebRequest -Uri $Info.Url -OutFile $zip -UseBasicParsing -Headers @{ 'User-Agent' = 'MW4-Config-Tool' } -TimeoutSec 120
+        $out = Join-Path $tmp 'x'
+        Expand-Archive -LiteralPath $zip -DestinationPath $out -Force
+        $main = Get-ChildItem -LiteralPath $out -Recurse -File -Filter 'MW4-Config-Tool.ps1' | Select-Object -First 1
+        if (-not $main) { throw 'The downloaded update looks incomplete. Nothing was changed.' }
+        $root = $main.DirectoryName
+        foreach ($f in @(Get-ChildItem -LiteralPath $root -Recurse -File)) {
+            $rel  = $f.FullName.Substring($root.Length).TrimStart('\', '/')
+            $dest = Join-Path $PSScriptRoot $rel
+            New-Item -ItemType Directory -Force -Path (Split-Path $dest) | Out-Null
+            # The launcher .bat is still running - only replace it if it actually changed
+            if ($f.Extension -eq '.bat' -and (Test-Path -LiteralPath $dest)) {
+                if ((Get-FileHash -LiteralPath $dest).Hash -eq (Get-FileHash -LiteralPath $f.FullName).Hash) { continue }
+            }
+            Copy-Item -LiteralPath $f.FullName -Destination $dest -Force
+            try { Unblock-File -LiteralPath $dest } catch { }
+        }
+    } finally {
+        Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 if ($Silent) {
     if (-not $Files) { Write-Host $NoGameMsg -ForegroundColor Yellow; exit 1 }
     $hw    = Get-HardwareInfo $Files[0]
@@ -596,6 +647,10 @@ if ($Silent) {
     $plan  = Get-Plan $hw $prefs
     $rows  = Get-PreviewRows $Files $plan.Changes $plan.Why
     Write-Host "$ToolName $ToolVersion" -ForegroundColor Cyan
+    if (-not $NoUpdateCheck) {
+        $u = & $UpdateCheckScript $ReleaseApi $ReleaseZip
+        if ($u -and (Test-NewerVersion $u.Tag $ToolVersion)) { Write-Host "Update available: $($u.Tag) - run the tool without -Silent to update, or download: $($u.Page)" -ForegroundColor Yellow }
+    }
     Write-Host ("CPU: {0} ({1} cores)  GPU: {2} [{3}, {4} GB]  Display: {5}x{6} @ {7} Hz  Drive: {8}" -f `
         $hw.CpuName, $hw.Cores, $hw.GpuName, $hw.Vendor, $hw.VramGB, $hw.Width, $hw.Height, $hw.RefreshHz, $hw.Drive)
     $rows | Format-Table File, Setting, Key, Current, New, Status -AutoSize | Out-String -Width 200 | Write-Host
@@ -978,7 +1033,7 @@ $RowTip = @'
   </Window.Resources>
 
   <Grid>
-    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
     <!-- ================= HEADER ================= -->
     <Border Grid.Row="0" Padding="26,16,26,16" BorderBrush="#FF5A1F" BorderThickness="0,0,0,2">
@@ -1045,8 +1100,27 @@ $RowTip = @'
       </DockPanel>
     </Border>
 
+    <!-- ================= UPDATE BAR ================= -->
+    <Border x:Name="updateBar" Grid.Row="1" Visibility="Collapsed" Margin="20,14,20,0" Padding="16,10" CornerRadius="10" BorderBrush="#FF5A1F" BorderThickness="1">
+      <Border.Background>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#3A1A08" Offset="0"/><GradientStop Color="#13161C" Offset="1"/></LinearGradientBrush>
+      </Border.Background>
+      <DockPanel>
+        <Button x:Name="btnUpdateLater" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="Later" Margin="8,0,0,0"/>
+        <Button x:Name="btnUpdate" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Padding="22,8" FontSize="13" Content="UPDATE NOW"/>
+        <Grid DockPanel.Dock="Left" Width="36" Height="36" Margin="0,0,14,0">
+          <Ellipse Fill="#2A1206" Stroke="#FF5A1F" StrokeThickness="1.5"/>
+          <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE896;" Foreground="#FF7B45" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock x:Name="tbUpdateTitle" Text="Update available" Foreground="White" FontWeight="Bold" FontSize="14"/>
+          <TextBlock x:Name="tbUpdateInfo" Foreground="#B9BFCA" FontSize="12" Margin="0,2,0,0"/>
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
     <!-- ================= BODY ================= -->
-    <Grid Grid.Row="1" Margin="12,10,12,4">
+    <Grid Grid.Row="2" Margin="12,10,12,4">
       <Grid.ColumnDefinitions><ColumnDefinition Width="320"/><ColumnDefinition Width="320"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
       <!-- YOUR RIG -->
@@ -1216,7 +1290,7 @@ $RowTip = @'
     </Grid>
 
     <!-- ================= FOOTER ================= -->
-    <Border Grid.Row="2" Background="#0E1015" BorderBrush="#272D38" BorderThickness="0,1,0,0" Padding="24,14">
+    <Border Grid.Row="3" Background="#0E1015" BorderBrush="#272D38" BorderThickness="0,1,0,0" Padding="24,14">
       <DockPanel LastChildFill="False">
         <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
           <TextBlock Text="JOIN THE SQUAD" Foreground="#8C94A3" FontSize="10" FontWeight="Bold" Margin="0,0,0,7"/>
@@ -1267,7 +1341,7 @@ $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
                'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit',
                'chkHdr','chkPrio','chkRO','lvPreview','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
-               'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
+               'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
 }
 
@@ -1442,6 +1516,49 @@ $ui.btnRestore.Add_Click({
 })
 
 $ui.btnFolder.Add_Click({ Start-Process explorer.exe $PlayersPath })
+
+# Update check runs in the background so the window opens instantly (offline = silently skipped)
+$ui.btnUpdateLater.Add_Click({ $ui.updateBar.Visibility = [System.Windows.Visibility]::Collapsed })
+$ui.btnUpdate.Add_Click({
+    if (-not $script:UpdateInfo) { return }
+    $ui.btnUpdate.IsEnabled = $false; $ui.btnUpdateLater.IsEnabled = $false
+    $ui.tbUpdateInfo.Text = 'Downloading and installing... this only takes a few seconds.'
+    $ui.updateBar.Dispatcher.Invoke([Action]{ }, [System.Windows.Threading.DispatcherPriority]::Render)
+    try {
+        Install-Update $script:UpdateInfo
+        [Windows.MessageBox]::Show("Updated to $($script:UpdateInfo.Tag). The tool will now restart.", $ToolName, 'OK', 'Information') | Out-Null
+        Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -STA -File `"$PSCommandPath`"" -WindowStyle Hidden
+        $Window.Close()
+    } catch {
+        $ui.btnUpdate.IsEnabled = $true; $ui.btnUpdateLater.IsEnabled = $true
+        $ui.tbUpdateInfo.Text = "Update failed: $($_.Exception.Message)"
+    }
+})
+if (-not $NoUpdateCheck) {
+    try {
+        $script:UpdPs = [powershell]::Create().AddScript($UpdateCheckScript).AddArgument($ReleaseApi).AddArgument($ReleaseZip)
+        $script:UpdHandle = $script:UpdPs.BeginInvoke()
+        $script:UpdTimer = New-Object System.Windows.Threading.DispatcherTimer
+        $script:UpdTimer.Interval = [TimeSpan]::FromMilliseconds(400)
+        $script:UpdTimer.Add_Tick({
+            if (-not $script:UpdHandle.IsCompleted) { return }
+            $script:UpdTimer.Stop()
+            try {
+                $res = $script:UpdPs.EndInvoke($script:UpdHandle)
+                $script:UpdPs.Dispose()
+                $info = $null
+                foreach ($item in $res) { if ($item) { $info = $item } }
+                if ($info -and $info.Url -and (Test-NewerVersion $info.Tag $ToolVersion)) {
+                    $script:UpdateInfo = $info
+                    $ui.tbUpdateTitle.Text = "Update available: $($info.Tag)"
+                    $ui.tbUpdateInfo.Text = "You have v$ToolVersion. One click updates the tool and restarts it - your game settings and backups stay as they are."
+                    $ui.updateBar.Visibility = [System.Windows.Visibility]::Visible
+                }
+            } catch { }
+        })
+        $script:UpdTimer.Start()
+    } catch { }
+}
 
 $script:Ready = $true
 Update-Preview
