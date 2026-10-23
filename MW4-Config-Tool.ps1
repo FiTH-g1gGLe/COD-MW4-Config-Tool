@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.1.1'
+$ToolVersion     = '1.1.2'
 $Links = @{
     Discord  = 'https://discord.gg/Br7z7zBvFb'
     YouTube  = 'https://www.youtube.com/user/FiTHGAMINGOFFICIAL'
@@ -688,6 +688,26 @@ if (-not $Files) {
       <Setter Property="Padding" Value="12,7"/><Setter Property="Margin" Value="6,0,0,0"/>
     </Style>
 
+    <Style x:Key="BtnBrand" TargetType="Button">
+      <Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="FontSize" Value="12"/>
+      <Setter Property="Margin" Value="6,0,0,0"/><Setter Property="Cursor" Value="Hand"/>
+      <Setter Property="Template"><Setter.Value>
+        <ControlTemplate TargetType="Button">
+          <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="6" Padding="12,8">
+            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <ControlTemplate.Triggers>
+            <Trigger Property="IsMouseOver" Value="True">
+              <Setter TargetName="Bd" Property="Effect"><Setter.Value><DropShadowEffect BlurRadius="14" ShadowDepth="0" Opacity="0.45" Color="White"/></Setter.Value></Setter>
+              <Setter TargetName="Bd" Property="RenderTransformOrigin" Value="0.5,0.5"/>
+              <Setter TargetName="Bd" Property="RenderTransform"><Setter.Value><ScaleTransform ScaleX="1.05" ScaleY="1.05"/></Setter.Value></Setter>
+            </Trigger>
+            <Trigger Property="IsPressed" Value="True"><Setter TargetName="Bd" Property="Opacity" Value="0.85"/></Trigger>
+          </ControlTemplate.Triggers>
+        </ControlTemplate>
+      </Setter.Value></Setter>
+    </Style>
+
     <!-- Change list -->
     <Style TargetType="GridViewColumnHeader">
       <Setter Property="Template"><Setter.Value>
@@ -768,20 +788,20 @@ if (-not $Files) {
         <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right">
           <TextBlock Text="JOIN THE SQUAD" Foreground="#8C94A3" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,0,8"/>
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="lnkDiscord" Style="{StaticResource BtnSocial}" ToolTip="Join the FiTH Gaming Discord">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8BD;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="Discord"/></StackPanel>
+            <Button x:Name="lnkDiscord" Style="{StaticResource BtnBrand}" Background="#5865F2" BorderBrush="#5865F2" ToolTip="Join the FiTH Gaming Discord">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8BD;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="DISCORD" Foreground="White"/></StackPanel>
             </Button>
-            <Button x:Name="lnkYouTube" Style="{StaticResource BtnSocial}" ToolTip="FiTH Gaming on YouTube">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="YouTube"/></StackPanel>
+            <Button x:Name="lnkYouTube" Style="{StaticResource BtnBrand}" Background="#FF0000" BorderBrush="#FF0000" ToolTip="FiTH Gaming on YouTube">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="YOUTUBE" Foreground="White"/></StackPanel>
             </Button>
-            <Button x:Name="lnkFacebook" Style="{StaticResource BtnSocial}" ToolTip="FiTH Gaming on Facebook">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE716;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="Facebook"/></StackPanel>
+            <Button x:Name="lnkFacebook" Style="{StaticResource BtnBrand}" Background="#1877F2" BorderBrush="#1877F2" ToolTip="FiTH Gaming on Facebook">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE716;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="FACEBOOK" Foreground="White"/></StackPanel>
             </Button>
-            <Button x:Name="lnkSteam" Style="{StaticResource BtnSocial}" ToolTip="FiTH Gaming Steam group">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7FC;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="Steam"/></StackPanel>
+            <Button x:Name="lnkSteam" Style="{StaticResource BtnBrand}" Background="#171A21" BorderBrush="#66C0F4" ToolTip="FiTH Gaming Steam group">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7FC;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="STEAM" Foreground="White"/></StackPanel>
             </Button>
-            <Button x:Name="lnkWeb" Style="{StaticResource BtnSocial}" ToolTip="fithgaming.co.uk">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE774;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="Website"/></StackPanel>
+            <Button x:Name="lnkWeb" Style="{StaticResource BtnBrand}" Background="#FF5A1F" BorderBrush="#FF5A1F" ToolTip="fithgaming.co.uk">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE774;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="WEBSITE" Foreground="White"/></StackPanel>
             </Button>
           </StackPanel>
         </StackPanel>
