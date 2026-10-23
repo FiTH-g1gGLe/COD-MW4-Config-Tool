@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.6.0'
+$ToolVersion     = '1.6.1'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -824,11 +824,13 @@ function New-TipXaml([string]$Title, [string]$Impact, [string]$Body, [string]$Re
 
 $Tips = @{
     tbCpu    = New-TipXaml 'CPU' 'DETECTED' 'Your processor, as reported by Windows.' 'Nothing to change here.'
-    tbCores  = New-TipXaml 'Physical cores' 'FPS' 'Sets how many render threads the game uses: cores minus one, leaving a core free for Windows, Discord and audio. On Intel 12th-14th gen, count only the performance (P) cores.' 'Leave as detected. A 6-core CPU is 6, an 8-core CPU is 8.'
-    tbGpu    = New-TipXaml 'Graphics card' '' 'Used to pick the right upscaler (DLSS, FSR or XeSS) and the DLSS model for your card.' 'Leave as detected, unless it shows integrated graphics instead of your real card.'
+    tbCores  = New-TipXaml 'Physical cores' 'FPS' 'Sets how many render threads the game uses: cores minus one, leaving a core free for Windows, Discord and audio. On Intel 12th-14th gen, count only the performance (P) cores.' 'Detected from Windows. Nothing to change here.'
+    tbGpu    = New-TipXaml 'Graphics card' '' 'Used to pick the right upscaler (DLSS, FSR or XeSS) and the DLSS model for your card.' 'Detected from the game. If this shows integrated graphics, disable it in Device Manager or BIOS.'
     cbVendor = New-TipXaml 'GPU vendor' 'LATENCY' 'Picks the latency tech for your card: NVIDIA Reflex, AMD Anti-Lag 2 or Intel XeLL.' 'Should match your graphics card.'
     tbVram   = New-TipXaml 'Video memory' 'STABILITY' 'Decides the video memory budget, texture quality in Visibility mode, and whether an upscaler is needed.' 'Check Task Manager > Performance > GPU > Dedicated GPU memory.'
-    tbRes    = New-TipXaml 'Resolution' 'FPS' 'Your screen resolution. At 4K, Auto switches to an upscaler to keep FPS high.' 'Your monitor''s native resolution.'
+    tbRes    = New-TipXaml 'Resolution' 'FPS' 'The resolutions your monitor supports, read from Windows. The tool uses it to decide between native SMAA and an upscaler (at 4K, Auto picks an upscaler). It does not change your in-game resolution.' 'Your monitor''s native resolution (selected by default).'
+    tbRam    = New-TipXaml 'System memory' 'STABILITY' 'Installed RAM, as detected by the game. 16 GB is the practical minimum for modern CoD; 32 GB gives headroom for Discord, browser and OBS.' 'Nothing to change here.'
+    launch   = New-TipXaml 'Steam launch options' '' 'Steam: Library > right-click Call of Duty > Properties > General > Launch Options. Modern CoD starts through a launcher, so classic options like -high never reach the game. The High CPU priority option in LOADOUT does that job properly.' 'Leave Launch Options empty for now.'
     tbHz     = New-TipXaml 'Refresh rate' 'STABILITY' 'Sets the FPS cap: refresh rate minus 3, which keeps G-Sync/FreeSync active and frame times even.' 'Your monitor''s maximum refresh rate. Check it is set in Windows Settings > Display > Advanced display.'
     cbDrive  = New-TipXaml 'Game drive' 'STABILITY' 'Read from the game. Hard drives stream maps more slowly and stutter more.' 'Install Call of Duty on an SSD if you can.'
     rbFps    = New-TipXaml 'Max FPS' 'BIG FPS' 'Lowest textures and 2x filtering, with every expensive effect off, for the highest frame rate.' 'Best for competitive play and high refresh rate monitors.'
@@ -874,7 +876,7 @@ $RowTip = @'
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="$ToolName" Width="1320" Height="860" MinWidth="1200" MinHeight="700"
+        Title="$ToolName" Width="1320" Height="940" MinWidth="1200" MinHeight="720"
         WindowStartupLocation="CenterScreen" Background="#0B0D11" FontFamily="Segoe UI" FontSize="13"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
   <Window.Resources>
@@ -1260,46 +1262,58 @@ $RowTip = @'
         <DockPanel>
           <StackPanel DockPanel.Dock="Top" Margin="0,0,0,4">
             <TextBlock Style="{StaticResource CardTitle}" Text="YOUR RIG"/>
-            <TextBlock Text="Auto-detected  &#183;  edit anything that's wrong" Foreground="#8C94A3" FontSize="11"/>
+            <TextBlock Text="Detected automatically from your PC and game" Foreground="#8C94A3" FontSize="11"/>
           </StackPanel>
           <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,4,0">
             <TextBlock Style="{StaticResource Lbl}" Text="CPU"/>
-            <TextBox x:Name="tbCpu" IsReadOnly="True"><TextBox.ToolTip><ToolTip>$($Tips['tbCpu'])</ToolTip></TextBox.ToolTip></TextBox>
+            <TextBox x:Name="tbCpu" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['tbCpu'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Graphics card"/>
-            <TextBox x:Name="tbGpu"><TextBox.ToolTip><ToolTip>$($Tips['tbGpu'])</ToolTip></TextBox.ToolTip></TextBox>
+            <TextBox x:Name="tbGpu" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['tbGpu'])</ToolTip></TextBox.ToolTip></TextBox>
             <Grid>
               <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
               <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
               <StackPanel Grid.Row="0" Grid.Column="0">
                 <TextBlock Style="{StaticResource Lbl}" Text="GPU vendor"/>
-                <ComboBox x:Name="cbVendor"><ComboBox.ToolTip><ToolTip>$($Tips['cbVendor'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>NVIDIA</ComboBoxItem><ComboBoxItem>AMD</ComboBoxItem><ComboBoxItem>Intel</ComboBoxItem><ComboBoxItem>Unknown</ComboBoxItem></ComboBox>
+                <TextBox x:Name="tbVendor" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['cbVendor'])</ToolTip></TextBox.ToolTip></TextBox>
               </StackPanel>
               <StackPanel Grid.Row="0" Grid.Column="2">
-                <TextBlock Style="{StaticResource Lbl}" Text="Video memory (GB)"/>
-                <TextBox x:Name="tbVram"><TextBox.ToolTip><ToolTip>$($Tips['tbVram'])</ToolTip></TextBox.ToolTip></TextBox>
+                <TextBlock Style="{StaticResource Lbl}" Text="Video memory"/>
+                <TextBox x:Name="tbVram" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['tbVram'])</ToolTip></TextBox.ToolTip></TextBox>
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="0">
                 <TextBlock Style="{StaticResource Lbl}" Text="CPU cores"/>
-                <TextBox x:Name="tbCores"><TextBox.ToolTip><ToolTip>$($Tips['tbCores'])</ToolTip></TextBox.ToolTip></TextBox>
+                <TextBox x:Name="tbCores" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['tbCores'])</ToolTip></TextBox.ToolTip></TextBox>
               </StackPanel>
               <StackPanel Grid.Row="1" Grid.Column="2">
-                <TextBlock Style="{StaticResource Lbl}" Text="Game drive"/>
-                <ComboBox x:Name="cbDrive"><ComboBox.ToolTip><ToolTip>$($Tips['cbDrive'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>SSD</ComboBoxItem><ComboBoxItem>HDD</ComboBoxItem></ComboBox>
+                <TextBlock Style="{StaticResource Lbl}" Text="System memory"/>
+                <TextBox x:Name="tbRam" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['tbRam'])</ToolTip></TextBox.ToolTip></TextBox>
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="0">
-                <TextBlock Style="{StaticResource Lbl}" Text="Resolution"/>
-                <TextBox x:Name="tbRes"><TextBox.ToolTip><ToolTip>$($Tips['tbRes'])</ToolTip></TextBox.ToolTip></TextBox>
+                <TextBlock Style="{StaticResource Lbl}" Text="Game drive"/>
+                <TextBox x:Name="tbDrive" IsReadOnly="True" Focusable="False"><TextBox.ToolTip><ToolTip>$($Tips['cbDrive'])</ToolTip></TextBox.ToolTip></TextBox>
               </StackPanel>
               <StackPanel Grid.Row="2" Grid.Column="2">
                 <TextBlock Style="{StaticResource Lbl}" Text="Refresh rate (Hz)"/>
                 <TextBox x:Name="tbHz"><TextBox.ToolTip><ToolTip>$($Tips['tbHz'])</ToolTip></TextBox.ToolTip></TextBox>
               </StackPanel>
             </Grid>
-            <Border Background="#1A1E26" CornerRadius="8" Padding="12,9" Margin="0,16,0,0">
-              <DockPanel>
-                <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE950;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                <TextBlock x:Name="tbRam" Foreground="#B9BFCA" FontSize="12" VerticalAlignment="Center"/>
-              </DockPanel>
+            <TextBlock Style="{StaticResource Lbl}" Text="Resolution"/>
+            <ComboBox x:Name="cbRes"><ComboBox.ToolTip><ToolTip>$($Tips['tbRes'])</ToolTip></ComboBox.ToolTip></ComboBox>
+
+            <!-- Steam launch options -->
+            <Border Background="#1A1E26" BorderBrush="#272D38" BorderThickness="1" CornerRadius="10" Padding="14,12" Margin="0,18,0,0">
+              <Border.ToolTip><ToolTip>$($Tips['launch'])</ToolTip></Border.ToolTip>
+              <StackPanel>
+                <DockPanel>
+                  <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE756;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                  <TextBlock Text="STEAM LAUNCH OPTIONS" Foreground="#FF5A1F" FontWeight="Bold" FontSize="12" VerticalAlignment="Center"/>
+                </DockPanel>
+                <Border Background="#101318" BorderBrush="#272D38" BorderThickness="1" CornerRadius="6" Padding="10,7" Margin="0,10,0,8">
+                  <TextBlock x:Name="tbLaunch" Text="None needed" Foreground="#3DDC97" FontFamily="Consolas" FontSize="12"/>
+                </Border>
+                <TextBlock TextWrapping="Wrap" Foreground="#8C94A3" FontSize="11" LineHeight="16"
+                           Text="Popular ones like -high, -threads or -USEALLAVAILABLECORES don't reach the game on modern CoD. CPU priority is handled by this tool instead. Proven options will appear here."/>
+              </StackPanel>
             </Border>
           </StackPanel></ScrollViewer>
         </DockPanel>
@@ -1479,7 +1493,7 @@ try {
     exit 1
 }
 $ui = @{}
-foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
+foreach ($n in 'tbCpu','tbCores','tbGpu','tbVendor','tbVram','cbRes','tbHz','tbDrive','tbRam','tbLaunch',
                'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit','lblHud','slHud',
                'chkHdr','chkPrio','chkRO','lvPreview','chkAll','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
                'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','tbVersion','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
@@ -1522,29 +1536,80 @@ function Select-ComboText($Combo, [string]$Text) {
     $Combo.SelectedIndex = $Combo.Items.Count - 1
 }
 
+# Resolutions the monitor supports, straight from Windows (falls back to a common list)
+function Get-DisplayResolutions {
+    $list = New-Object System.Collections.Generic.List[string]
+    try {
+        if (-not ('MW4Tool.Display' -as [type])) {
+            Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+namespace MW4Tool {
+    public static class Display {
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct DEVMODE {
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmDeviceName;
+            public short dmSpecVersion; public short dmDriverVersion; public short dmSize; public short dmDriverExtra;
+            public int dmFields; public int dmPositionX; public int dmPositionY; public int dmDisplayOrientation; public int dmDisplayFixedOutput;
+            public short dmColor; public short dmDuplex; public short dmYResolution; public short dmTTOption; public short dmCollate;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string dmFormName;
+            public short dmLogPixels; public int dmBitsPerPel; public int dmPelsWidth; public int dmPelsHeight;
+            public int dmDisplayFlags; public int dmDisplayFrequency; public int dmICMMethod; public int dmICMIntent;
+            public int dmMediaType; public int dmDitherType; public int dmReserved1; public int dmReserved2;
+            public int dmPanningWidth; public int dmPanningHeight;
+        }
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        static extern bool EnumDisplaySettings(string deviceName, int modeNum, ref DEVMODE devMode);
+        public static string[] Modes() {
+            List<string> seen = new List<string>();
+            DEVMODE dm = new DEVMODE();
+            dm.dmSize = (short)Marshal.SizeOf(typeof(DEVMODE));
+            for (int i = 0; EnumDisplaySettings(null, i, ref dm); i++) {
+                string m = dm.dmPelsWidth + "x" + dm.dmPelsHeight;
+                if (!seen.Contains(m)) { seen.Add(m); }
+            }
+            return seen.ToArray();
+        }
+    }
+}
+'@
+        }
+        foreach ($m in [MW4Tool.Display]::Modes()) { $list.Add($m) }
+    } catch { }
+    if ($list.Count -eq 0) {
+        foreach ($m in '3840x2160','3440x1440','2560x1440','2560x1080','1920x1200','1920x1080','1680x1050','1600x900','1366x768','1280x720') { $list.Add($m) }
+    }
+    # Keep 720p and up, biggest first
+    $sorted = $list | Where-Object { $_ -match '^(\d+)x(\d+)$' -and [int]$Matches[1] -ge 1280 -and [int]$Matches[2] -ge 720 } |
+              Sort-Object { $p = $_ -split 'x'; [int]$p[0] * [int]$p[1] } -Descending
+    return @($sorted)
+}
+
 function Show-Hardware($hw) {
-    $ui.tbCpu.Text   = $hw.CpuName
-    $ui.tbCores.Text = [string]$hw.Cores
-    $ui.tbGpu.Text   = $hw.GpuName
-    Select-ComboText $ui.cbVendor $hw.Vendor
-    $ui.tbVram.Text  = [string]$hw.VramGB
-    $ui.tbRes.Text   = $(if ($hw.Width) { "$($hw.Width)x$($hw.Height)" } else { '' })
-    $ui.tbHz.Text    = [string]$hw.RefreshHz
-    Select-ComboText $ui.cbDrive $hw.Drive
-    $ui.tbRam.Text   = $(if ($hw.RamGB) { "System memory: $($hw.RamGB) GB" } else { '' })
+    $ui.tbCpu.Text    = $hw.CpuName
+    $ui.tbCores.Text  = [string]$hw.Cores
+    $ui.tbGpu.Text    = $hw.GpuName
+    $ui.tbVendor.Text = $hw.Vendor
+    if ($hw.VramGB) { $ui.tbVram.Text = "$($hw.VramGB) GB" } else { $ui.tbVram.Text = 'Unknown (8 GB assumed)' }
+    if ($hw.RamGB)  { $ui.tbRam.Text  = "$($hw.RamGB) GB" }  else { $ui.tbRam.Text  = 'Unknown' }
+    $ui.tbDrive.Text  = $hw.Drive
+    $ui.tbHz.Text     = [string]$hw.RefreshHz
+    $ui.cbRes.Items.Clear()
+    $current = ''
+    if ($hw.Width) { $current = "$($hw.Width)x$($hw.Height)" }
+    $modes = Get-DisplayResolutions
+    if ($current -and -not ($modes -contains $current)) { [void]$ui.cbRes.Items.Add($current) }
+    foreach ($m in $modes) { [void]$ui.cbRes.Items.Add($m) }
+    if ($current) { $ui.cbRes.SelectedItem = $current } elseif ($ui.cbRes.Items.Count -gt 0) { $ui.cbRes.SelectedIndex = 0 }
 }
 
 function Read-Hardware {
     $hw = $script:Hw
-    $cores = ConvertTo-PositiveInt $ui.tbCores.Text
-    if ($cores) { $hw.Cores = $cores }
-    $hw.GpuName   = $ui.tbGpu.Text
-    $hw.Vendor    = [string]$ui.cbVendor.SelectedItem.Content
-    $hw.VramGB    = ConvertTo-PositiveInt $ui.tbVram.Text
-    $m = [regex]::Match($ui.tbRes.Text, '(\d+)\s*[xX]\s*(\d+)')
-    if ($m.Success) { $hw.Width = [int]$m.Groups[1].Value; $hw.Height = [int]$m.Groups[2].Value } else { $hw.Width = $null; $hw.Height = $null }
-    $hw.RefreshHz = ConvertTo-PositiveInt $ui.tbHz.Text
-    $hw.Drive     = [string]$ui.cbDrive.SelectedItem.Content
+    $m = [regex]::Match([string]$ui.cbRes.SelectedItem, '(\d+)\s*[xX]\s*(\d+)')
+    if ($m.Success) { $hw.Width = [int]$m.Groups[1].Value; $hw.Height = [int]$m.Groups[2].Value }
+    $hz = ConvertTo-PositiveInt $ui.tbHz.Text
+    if ($hz) { $hw.RefreshHz = $hz }
     return $hw
 }
 
@@ -1664,8 +1729,8 @@ $ui.chkHdr.IsChecked = $false; $ui.chkPrio.IsChecked = $true; $ui.chkRO.IsChecke
 Update-Backups
 
 # Any change refreshes the preview
-foreach ($n in 'tbCores','tbGpu','tbVram','tbRes','tbHz','tbCap') { $ui[$n].Add_LostFocus({ Update-Preview }) }
-foreach ($n in 'cbVendor','cbDrive','cbImage','cbCap') { $ui[$n].Add_SelectionChanged({ Update-Preview }) }
+foreach ($n in 'tbHz','tbCap') { $ui[$n].Add_LostFocus({ Update-Preview }) }
+foreach ($n in 'cbRes','cbImage','cbCap') { $ui[$n].Add_SelectionChanged({ Update-Preview }) }
 foreach ($n in 'rbFps','rbVis','rbHead','rbSpk','chkMusic','chkHdr','chkPrio','chkRO') { $ui[$n].Add_Click({ Update-Preview }) }
 foreach ($n in 'slAnn','slHit','slHud') { $ui[$n].Add_ValueChanged({ Update-Preview }) }
 
