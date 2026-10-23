@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.4.1'
+$ToolVersion     = '1.5.0'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -74,10 +74,90 @@ function Read-CodFile([string]$Path) {
             $comments[$m.Groups['key'].Value] = $m.Groups['cmt'].Value
         }
     }
-    [pscustomobject]@{ Path = $Path; Lines = $lines; NewLine = $nl; Values = $values; Comments = $comments }
+    [pscustomobject]@{ Kind = 'Text'; Path = $Path; Lines = $lines; NewLine = $nl; Values = $values; Comments = $comments }
+}
+
+# ---------------------------------------------------------------------------------------------
+#  Binary account settings (minimap, HUD colours...)
+#  Layout: 1-byte header, records, short trailer.
+#  Record: [UInt32 id][Byte index][UInt16 type][UInt16 type2][Byte kind][Byte length][value]
+#  kind 9 = text (NUL-terminated), 6 = Int32, 8 = float, 1 = bool. Ids were mapped by changing
+#  each option in game and comparing the file before and after.
+# ---------------------------------------------------------------------------------------------
+$BinSettings = @(
+    [pscustomobject]@{ Name = 'MinimapShape@0'; File = 'g.cod26.pm.1.0.b'; Id = [uint32]3438256713; Index = 0; Kind = 9
+                       Map = [ordered]@{ 'style' = 'Square'; 'none' = 'Round' } }
+    [pscustomobject]@{ Name = 'EnemyColor@0'; File = 'g.cod26.1.0.b'; Id = [uint32]1535289133; Index = 0; Kind = 6
+                       Map = [ordered]@{ '-2' = 'Default red'; '45' = 'Magenta' } }
+)
+
+function ConvertTo-CodBinBytes($File) {
+    $ms = New-Object System.IO.MemoryStream
+    $ms.WriteByte($File.Header)
+    foreach ($r in $File.Records) {
+        $ms.Write($r.Head, 0, $r.Head.Length)
+        $ms.WriteByte([byte]$r.Raw.Length)
+        $ms.Write($r.Raw, 0, $r.Raw.Length)
+    }
+    $ms.Write($File.Trailer, 0, $File.Trailer.Length)
+    return ,$ms.ToArray()
+}
+
+function Read-CodBinFile([string]$Path) {
+    try {
+        $b = [IO.File]::ReadAllBytes($Path)
+        if ($b.Length -lt 12) { return $null }
+        $recs = New-Object System.Collections.Generic.List[object]
+        $i = 1
+        while (($i + 11) -le $b.Length) {
+            $flag = [int]$b[$i + 4]; $len = [int]$b[$i + 10]
+            if ($flag -gt 15 -or ($i + 11 + $len) -gt $b.Length) { break }
+            $head = New-Object byte[] 10; [Array]::Copy($b, $i, $head, 0, 10)
+            $raw  = New-Object byte[] $len; [Array]::Copy($b, $i + 11, $raw, 0, $len)
+            $recs.Add([pscustomobject]@{ Id = [BitConverter]::ToUInt32($b, $i); Index = $flag; Kind = [int]$b[$i + 9]; Head = $head; Raw = $raw })
+            $i += 11 + $len
+        }
+        $trailer = New-Object byte[] ($b.Length - $i); [Array]::Copy($b, $i, $trailer, 0, $b.Length - $i)
+        $file = [pscustomobject]@{ Kind = 'Bin'; Path = $Path; Header = $b[0]; Records = $recs; Trailer = $trailer
+                                   Values = [ordered]@{}; Comments = @{}; Defs = @{} }
+        # Only touch files we can rebuild byte-for-byte
+        if ($trailer.Length -gt 32) { return $null }
+        $check = ConvertTo-CodBinBytes $file
+        if ($check.Length -ne $b.Length) { return $null }
+        for ($j = 0; $j -lt $b.Length; $j++) { if ($check[$j] -ne $b[$j]) { return $null } }
+
+        $leaf = Split-Path $Path -Leaf
+        foreach ($def in @($BinSettings | Where-Object { $_.File -eq $leaf })) {
+            $rec = $null
+            foreach ($r in $recs) { if ($r.Id -eq $def.Id -and $r.Index -eq $def.Index -and $r.Kind -eq $def.Kind) { $rec = $r; break } }
+            if (-not $rec) { continue }
+            if ($def.Kind -eq 9) { $rawText = [Text.Encoding]::ASCII.GetString($rec.Raw).TrimEnd([char]0) }
+            else { $rawText = [string][BitConverter]::ToInt32($rec.Raw, 0) }
+            $shown = "Custom ($rawText)"
+            if ($def.Map.Contains($rawText)) { $shown = $def.Map[$rawText] }
+            $file.Values[$def.Name]   = $shown
+            $file.Comments[$def.Name] = '// one of ' + (@($def.Map.Values) -join ', ')
+            $file.Defs[$def.Name]     = [pscustomobject]@{ Def = $def; Rec = $rec }
+        }
+        if ($file.Values.Count -eq 0) { return $null }
+        return $file
+    } catch { return $null }
+}
+
+function Write-CodBinFile($File, $Changes) {
+    foreach ($name in @($Changes.Keys)) {
+        if (-not $File.Defs.ContainsKey($name)) { continue }
+        $d = $File.Defs[$name]; $rawText = $null
+        foreach ($k in $d.Def.Map.Keys) { if ($d.Def.Map[$k] -eq $Changes[$name]) { $rawText = $k } }
+        if ($null -eq $rawText) { continue }
+        if ($d.Def.Kind -eq 9) { $d.Rec.Raw = [Text.Encoding]::ASCII.GetBytes($rawText + [char]0) }
+        else { $d.Rec.Raw = [BitConverter]::GetBytes([int]$rawText) }
+    }
+    [IO.File]::WriteAllBytes($File.Path, (ConvertTo-CodBinBytes $File))
 }
 
 function Write-CodFile($File, $Changes) {
+    if ($File.Kind -eq 'Bin') { Write-CodBinFile $File $Changes; return }
     $out = foreach ($l in $File.Lines) {
         $m = [regex]::Match($l, $LineRegex)
         if ($m.Success -and $Changes.Contains($m.Groups['key'].Value)) {
@@ -120,6 +200,14 @@ function Get-CodFiles {
     foreach ($d in @(Get-ChildItem -LiteralPath $PlayersPath -Directory -ErrorAction SilentlyContinue)) {
         $acc = Join-Path $d.FullName $AccountFileName
         if (Test-Path -LiteralPath $acc) { $files.Add((Read-CodFile $acc)) }
+        # Binary settings may sit in a sub folder (SteamCloud on Steam)
+        foreach ($binName in @($BinSettings | ForEach-Object { $_.File } | Select-Object -Unique)) {
+            $bin = Get-ChildItem -LiteralPath $d.FullName -Recurse -File -Filter $binName -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($bin) {
+                $bf = Read-CodBinFile $bin.FullName
+                if ($bf) { $files.Add($bf) }
+            }
+        }
     }
     return ,$files
 }
@@ -226,6 +314,18 @@ function Get-HardwareInfo($SysFile) {
 # ---------------------------------------------------------------------------------------------
 #  Rules: hardware + preferences -> the values to set
 # ---------------------------------------------------------------------------------------------
+function Get-HudPullDefault($Files) {
+    foreach ($f in $Files) {
+        if ($f.Kind -ne 'Text' -or -not $f.Values.Contains('HUDHorizBound@0')) { continue }
+        $v = [string]$f.Values['HUDHorizBound@0']
+        if ($v -notmatch '^\s*-?\d+(\.\d+)?\s*$') { continue }
+        $d = [double]::Parse($v, $Inv)
+        if ($d -ge 0.999) { return 15 }            # still at the game default: suggest a small pull-in
+        return [int][math]::Round((1 - $d) * 100)  # keep what the player already chose
+    }
+    return 15
+}
+
 function New-DefaultPrefs {
     [ordered]@{
         Goal         = 'FPS'          # FPS | Visibility
@@ -236,6 +336,7 @@ function New-DefaultPrefs {
         MuteMusic    = $true
         Announcer    = 40             # percent
         HitMarkers   = 50             # percent
+        HudPull      = 15             # percent toward the centre (0 = game default edge)
         HDR          = $false
         HighPriority = $true
         ReadOnly     = $false
@@ -338,6 +439,10 @@ TelescopeVolume|News Feed Audio|AUDIO|Audio from in-game news and messages of th
 CinematicVolume|Cinematic Volume|AUDIO|Cutscene and cinematic audio.|Muted for multiplayer focus.
 MuteLicensedMusic|Licensed Music|AUDIO|Licensed songs in bundles and menus.|Muted. Also safer if you stream.
 VoiceVolume|Announcer / Dialogue|AUDIO|Announcer callouts and character voice lines.|Lower than full, so you still hear UAV and killstreak callouts without them covering footsteps.
+MinimapShape|Minimap Shape|CLARITY|Square or round minimap.|Square shows the corners a round minimap cuts off: about 27% more of the map at a glance.
+EnemyColor|Enemy Colour|CLARITY|Colour used for enemies on the minimap, nameplates and pings.|Magenta almost never appears on CoD maps, so enemy markers pop instead of blending into red and orange lighting. Only changed if you were still on the default red.
+HUDHorizBound|HUD Position (left/right)|CLARITY|How far the minimap, ammo counter and killfeed sit from the left and right screen edges. 1.0 is the edge, lower pulls them toward the centre.|Set from your HUD position slider.
+HUDVertBound|HUD Position (top/bottom)|CLARITY|How far the HUD sits from the top and bottom screen edges. 1.0 is the edge, lower pulls it toward the centre.|Set from your HUD position slider.
 HitMarkersVolume|Hit Marker Volume|AUDIO|Volume of the hit marker sound.|Half volume. Clear feedback that doesn't drown out footsteps mid-fight.
 '@
 
@@ -499,23 +604,40 @@ function Get-Plan($Hw, $Prefs) {
 
     $notes.Add('After applying: open the game, Graphics > Restart Shaders Pre-Loading, then restart the game.')
     $notes.Add("If the game asks to 'Set Optimal Settings & Run In Safe Mode', choose No.")
-    [pscustomobject]@{ Changes = $c; Notes = $notes; Why = $why }
+    # --- HUD: square minimap and magenta enemies for everyone; HUD position from the slider
+    $c['MinimapShape@0'] = 'Square'
+    $c['EnemyColor@0']   = 'Magenta'
+    $onlyIf = @{ 'EnemyColor@0' = 'Default red' }   # never override a colour the player picked
+    $pull = [int]$Prefs.HudPull
+    if ($pull -lt 0) { $pull = 0 } elseif ($pull -gt 100) { $pull = 100 }
+    $hud = F6 (1 - ($pull / 100.0))
+    $c['HUDHorizBound@0'] = $hud; $c['HUDVertBound@0'] = $hud
+    $hudWhy = "Your HUD position slider is at $pull%. Pulling the minimap and HUD toward your crosshair means less eye travel mid-fight."
+    if ($pull -eq 0) { $hudWhy = 'HUD position slider is at 0%: the game default, right at the screen edges.' }
+    $why['HUDHorizBound@0'] = $hudWhy; $why['HUDVertBound@0'] = $hudWhy
+
+    [pscustomobject]@{ Changes = $c; Notes = $notes; Why = $why; OnlyIf = $onlyIf }
 }
 
-function Get-PreviewRows($Files, $Changes, $Why) {
+function Get-PreviewRows($Files, $Changes, $Why, $OnlyIf) {
     $rows = New-Object System.Collections.Generic.List[object]
     foreach ($f in $Files) {
-        $label = $(if ((Split-Path $f.Path -Leaf) -eq $SystemFileName) { 'Graphics' } else { 'Account' })
+        $label = 'Account'
+        if ((Split-Path $f.Path -Leaf) -eq $SystemFileName) { $label = 'Graphics' }
+        if ($f.Kind -eq 'Bin') { $label = 'HUD' }
         foreach ($k in $Changes.Keys) {
             if (-not $f.Values.Contains($k)) { continue }
             $cur = $f.Values[$k]; $new = $Changes[$k]
             if ($cur -ceq $new) { continue }
+            if ($OnlyIf -and $OnlyIf.ContainsKey($k) -and $cur -ne $OnlyIf[$k]) { continue }
+            $fileLabel = $label
+            if ($k -like 'HUD*Bound@*') { $fileLabel = 'HUD' }
             $ok = Test-CodValue $f.Comments[$k] $new
             $info = Get-SettingInfo $k
             $reason = $info.Why
             if ($Why -and $Why.ContainsKey($k)) { $reason = $Why[$k] }
             $rows.Add([pscustomobject]@{
-                File = $label; Setting = $info.Title; Key = $k
+                File = $fileLabel; Setting = $info.Title; Key = $k
                 Info = $info.Info; Impact = $info.Impact; Why = $reason
                 Current = $cur; New = $new; Path = $f.Path
                 Status = $(if ($ok) { 'change' } else { 'skipped (not valid in this version)' })
@@ -644,8 +766,9 @@ if ($Silent) {
     if (-not $Files) { Write-Host $NoGameMsg -ForegroundColor Yellow; exit 1 }
     $hw    = Get-HardwareInfo $Files[0]
     $prefs = New-DefaultPrefs
+    $prefs.HudPull = Get-HudPullDefault $Files
     $plan  = Get-Plan $hw $prefs
-    $rows  = Get-PreviewRows $Files $plan.Changes $plan.Why
+    $rows  = Get-PreviewRows $Files $plan.Changes $plan.Why $plan.OnlyIf
     Write-Host "$ToolName $ToolVersion" -ForegroundColor Cyan
     if (-not $NoUpdateCheck) {
         $u = & $UpdateCheckScript $ReleaseApi $ReleaseZip
@@ -712,6 +835,7 @@ $Tips = @{
     rbSpk    = New-TipXaml 'Speakers' 'AUDIO' 'THX loudspeaker spatial audio on, headphone 3D off, channel count from Windows.' 'Only if you play on speakers or a soundbar.'
     chkMusic = New-TipXaml 'Mute music' 'AUDIO' 'Mutes menu and match music, war tracks, licensed music, news feed audio and cinematics.' 'On, for clean footsteps.'
     slAnn    = New-TipXaml 'Announcer and dialogue' 'AUDIO' 'Volume of announcer callouts (UAV, killstreaks) and character voice lines.' '30-50%: callouts stay clear without masking footsteps.'
+    slHud    = New-TipXaml 'HUD position' 'CLARITY' 'Pulls the minimap, ammo counter and killfeed in from the screen corners toward your crosshair. 0% is the game default (screen edge), 100% is as close to the centre as the game allows. Square minimap and magenta enemies are set for you automatically.' 'Around 15% for most players. Go much higher if you never glance at the corner minimap mid-fight.'
     slHit    = New-TipXaml 'Hit markers' 'AUDIO' 'Volume of the hit marker sound when your shots land.' '40-60%: clear feedback that doesn''t drown out footsteps.'
     chkHdr   = New-TipXaml 'HDR' 'CLARITY' 'Turns on HDR output. Only works on an HDR monitor with HDR switched on in Windows.' 'Off, unless you have a proper HDR monitor (OLED or 600+ nits).'
     chkPrio  = New-TipXaml 'High CPU priority' 'FPS' 'Windows always starts cod.exe at High priority, so background apps can''t steal CPU time from the game. Asks for admin once.' 'On. A small but real boost to 1% lows.'
@@ -1215,6 +1339,11 @@ $RowTip = @'
               <TextBlock Text="Hit markers" Foreground="#8C94A3" FontSize="12"/>
             </DockPanel>
             <Slider x:Name="slHit" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slHit'])</ToolTip></Slider.ToolTip></Slider>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="lblHud" DockPanel.Dock="Right" Foreground="#FF7B45" FontWeight="Bold" FontSize="12"/>
+              <TextBlock Text="HUD position (edge to centre)" Foreground="#8C94A3" FontSize="12"/>
+            </DockPanel>
+            <Slider x:Name="slHud" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slHud'])</ToolTip></Slider.ToolTip></Slider>
             <Border Height="1" Background="#272D38" Margin="0,12,0,6"/>
             <CheckBox x:Name="chkPrio" Content="High CPU priority for cod.exe"><CheckBox.ToolTip><ToolTip>$($Tips['chkPrio'])</ToolTip></CheckBox.ToolTip></CheckBox>
             <CheckBox x:Name="chkHdr" Content="HDR (needs an HDR monitor)"><CheckBox.ToolTip><ToolTip>$($Tips['chkHdr'])</ToolTip></CheckBox.ToolTip></CheckBox>
@@ -1339,7 +1468,7 @@ try {
 }
 $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
-               'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit',
+               'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit','lblHud','slHud',
                'chkHdr','chkPrio','chkRO','lvPreview','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
                'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','tbVersion','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
@@ -1360,7 +1489,7 @@ if ($logo) {
     $ui.imgLogo.Source = $logo; $ui.imgLogo.Visibility = 'Visible'; $ui.logoFallback.Visibility = 'Collapsed'
     $Window.Icon = $logo
 }
-$accCount = @($Files | Where-Object { (Split-Path $_.Path -Leaf) -ne $SystemFileName }).Count
+$accCount = @($Files | Where-Object { $_.Kind -eq 'Text' -and (Split-Path $_.Path -Leaf) -ne $SystemFileName }).Count
 $ui.tbGameStatus.Text = $(if ($accCount -gt 0) { "Settings found  /  $accCount account" } else { 'Settings found' })
 # Fit the window on smaller / scaled screens
 $work = [System.Windows.SystemParameters]::WorkArea
@@ -1418,6 +1547,7 @@ function Read-Prefs {
     $p.MuteMusic  = [bool]$ui.chkMusic.IsChecked
     $p.Announcer  = [int]$ui.slAnn.Value
     $p.HitMarkers = [int]$ui.slHit.Value
+    $p.HudPull    = [int]$ui.slHud.Value
     $p.HDR        = [bool]$ui.chkHdr.IsChecked
     $p.HighPriority = [bool]$ui.chkPrio.IsChecked
     $p.ReadOnly   = [bool]$ui.chkRO.IsChecked
@@ -1436,10 +1566,12 @@ function Update-Preview {
     try {
         $ui.lblAnn.Text = "$([int]$ui.slAnn.Value)%"
         $ui.lblHit.Text = "$([int]$ui.slHit.Value)%"
+        $hudPct = [int]$ui.slHud.Value
+        if ($hudPct -ge 100) { $ui.lblHud.Text = 'CENTRE' } elseif ($hudPct -le 0) { $ui.lblHud.Text = 'EDGE' } else { $ui.lblHud.Text = "$hudPct% in" }
         if ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom') { $ui.tbCap.Visibility = [System.Windows.Visibility]::Visible }
         else { $ui.tbCap.Visibility = [System.Windows.Visibility]::Collapsed }
         $plan = Get-Plan (Read-Hardware) (Read-Prefs)
-        $script:Rows = Get-PreviewRows $script:Files $plan.Changes $plan.Why
+        $script:Rows = Get-PreviewRows $script:Files $plan.Changes $plan.Why $plan.OnlyIf
         # A DataTable binds cleanly in Windows PowerShell 5.1 (a PowerShell array here throws "Argument types do not match").
         $dt = New-Object System.Data.DataTable
         $cols = 'File', 'Setting', 'Key', 'Current', 'New', 'Status', 'Info', 'Impact', 'Why'
@@ -1472,6 +1604,7 @@ Show-Hardware $script:Hw
 $ui.rbFps.IsChecked = $true; $ui.rbHead.IsChecked = $true
 $ui.cbImage.SelectedIndex = 0; $ui.cbCap.SelectedIndex = 0
 $ui.chkMusic.IsChecked = $true; $ui.slAnn.Value = 40; $ui.slHit.Value = 50
+$ui.slHud.Value = Get-HudPullDefault $Files
 $ui.chkHdr.IsChecked = $false; $ui.chkPrio.IsChecked = $true; $ui.chkRO.IsChecked = $false
 Update-Backups
 
@@ -1479,7 +1612,7 @@ Update-Backups
 foreach ($n in 'tbCores','tbGpu','tbVram','tbRes','tbHz','tbCap') { $ui[$n].Add_LostFocus({ Update-Preview }) }
 foreach ($n in 'cbVendor','cbDrive','cbImage','cbCap') { $ui[$n].Add_SelectionChanged({ Update-Preview }) }
 foreach ($n in 'rbFps','rbVis','rbHead','rbSpk','chkMusic','chkHdr','chkPrio','chkRO') { $ui[$n].Add_Click({ Update-Preview }) }
-foreach ($n in 'slAnn','slHit') { $ui[$n].Add_ValueChanged({ Update-Preview }) }
+foreach ($n in 'slAnn','slHit','slHud') { $ui[$n].Add_ValueChanged({ Update-Preview }) }
 
 $ui.btnApply.Add_Click({
     try {
