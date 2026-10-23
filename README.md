@@ -130,6 +130,7 @@ Optional High CPU priority for `cod.exe`, shader pre-loading on, cloud sync off 
 | **FPS cap** | Auto · Uncapped · Custom |
 | **Audio** | Headphones or Speakers · mute music · announcer and hit marker volume |
 | **HUD position** | Slide the minimap and HUD from the screen edge toward your crosshair |
+| **Field of view** | 90-120, starts at your current FOV (100-105 recommended) |
 | **Extras** | HDR · High CPU priority · lock graphics file read-only |
 
 <details>
@@ -145,6 +146,7 @@ Optional High CPU priority for `cod.exe`, shader pre-loading on, cloud sync off 
 - **Power saving:** every "sustainability" and low-battery option off
 - **Stability:** shader pre-loading on, cloud settings sync off, hardware-change reset off
 - **Menus:** 120 FPS in menus, 30 FPS when the game is in the background, intro videos skipped
+- **View:** 1st person camera shake down to Low (50%)
 - **HUD:** square, rotating minimap (about 27% more map), magenta enemies if you're still on default red, HUD pulled in from the screen edges
 
 </details>

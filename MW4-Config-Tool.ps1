@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.6.1'
+$ToolVersion     = '1.7.0'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -44,7 +44,8 @@ $Links = @{
     Website  = 'http://fithgaming.co.uk/'
 }
 $SystemFileName  = 's.1.0.cod26.txt'      # graphics / display / system settings (per PC)
-$AccountFileName = 'g.cod26.1.0.l.txt'    # audio / mouse / FOV settings (per account, in a sub folder)
+$AccountFileName = 'g.cod26.1.0.l.txt'    # audio / mouse / HUD settings (per account, in a sub folder)
+$ModeFileName    = 'g.cod26.pm.1.0.l.txt' # multiplayer FOV (per account, same folder)
 $GameProcess     = 'cod'                  # cod.exe
 $PriorityKey     = 'HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\cod.exe\PerfOptions'
 
@@ -89,6 +90,8 @@ $BinSettings = @(
                        Map = [ordered]@{ 'style' = 'Square'; 'none' = 'Round' } }
     [pscustomobject]@{ Name = 'MinimapRotation@1'; File = 'g.cod26.1.0.b'; Id = [uint32]3438256713; Index = 1; Kind = 9
                        Map = [ordered]@{ 'none' = 'On'; 'rotation_disabled' = 'Off' } }
+    [pscustomobject]@{ Name = 'CameraMovement@0'; File = 'g.cod26.pm.1.0.b'; Id = [uint32]159726470; Index = 0; Kind = 8
+                       Map = [ordered]@{ '1' = 'Default (100%)'; '0.75' = 'Moderate (75%)'; '0.5' = 'Low (50%)'; '0.25' = 'Minimal (25%)' } }
     [pscustomobject]@{ Name = 'EnemyColor@0'; File = 'g.cod26.1.0.b'; Id = [uint32]1535289133; Index = 0; Kind = 6
                        Map = [ordered]@{ '-2' = 'Default red'; '45' = 'Magenta' } }
 )
@@ -134,6 +137,7 @@ function Read-CodBinFile([string]$Path) {
             foreach ($r in $recs) { if ($r.Id -eq $def.Id -and $r.Index -eq $def.Index -and $r.Kind -eq $def.Kind) { $rec = $r; break } }
             if (-not $rec) { continue }
             if ($def.Kind -eq 9) { $rawText = [Text.Encoding]::ASCII.GetString($rec.Raw).TrimEnd([char]0) }
+            elseif ($def.Kind -eq 8) { $rawText = ([BitConverter]::ToSingle($rec.Raw, 0)).ToString($Inv) }
             else { $rawText = [string][BitConverter]::ToInt32($rec.Raw, 0) }
             $shown = "Custom ($rawText)"
             if ($def.Map.Contains($rawText)) { $shown = $def.Map[$rawText] }
@@ -153,6 +157,7 @@ function Write-CodBinFile($File, $Changes) {
         foreach ($k in $d.Def.Map.Keys) { if ($d.Def.Map[$k] -eq $Changes[$name]) { $rawText = $k } }
         if ($null -eq $rawText) { continue }
         if ($d.Def.Kind -eq 9) { $d.Rec.Raw = [Text.Encoding]::ASCII.GetBytes($rawText + [char]0) }
+        elseif ($d.Def.Kind -eq 8) { $d.Rec.Raw = [BitConverter]::GetBytes([single]::Parse($rawText, $Inv)) }
         else { $d.Rec.Raw = [BitConverter]::GetBytes([int]$rawText) }
     }
     [IO.File]::WriteAllBytes($File.Path, (ConvertTo-CodBinBytes $File))
@@ -203,6 +208,8 @@ function Get-CodFiles {
         $acc = Join-Path $d.FullName $AccountFileName
         if (-not (Test-Path -LiteralPath $acc)) { continue }   # not an account folder (e.g. a backup copy)
         $files.Add((Read-CodFile $acc))
+        $mode = Join-Path $d.FullName $ModeFileName
+        if (Test-Path -LiteralPath $mode) { $files.Add((Read-CodFile $mode)) }
         # Binary settings may sit in a sub folder (SteamCloud on Steam)
         foreach ($binName in @($BinSettings | ForEach-Object { $_.File } | Select-Object -Unique)) {
             $bin = Get-ChildItem -LiteralPath $d.FullName -Recurse -File -Filter $binName -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -317,6 +324,28 @@ function Get-HardwareInfo($SysFile) {
 # ---------------------------------------------------------------------------------------------
 #  Rules: hardware + preferences -> the values to set
 # ---------------------------------------------------------------------------------------------
+function Get-CurrentPercent($Files, [string]$Key, [int]$Fallback) {
+    foreach ($f in $Files) {
+        if ($f.Kind -ne 'Text' -or (Split-Path $f.Path -Leaf) -ne $AccountFileName -or -not $f.Values.Contains($Key)) { continue }
+        $v = [string]$f.Values[$Key]
+        if ($v -notmatch '^\s*-?\d+(\.\d+)?\s*$') { continue }
+        return [int][math]::Round([double]::Parse($v, $Inv) * 100)
+    }
+    return $Fallback
+}
+
+function Get-FovDefault($Files) {
+    foreach ($f in $Files) {
+        if ($f.Kind -ne 'Text' -or (Split-Path $f.Path -Leaf) -ne $ModeFileName -or -not $f.Values.Contains('Fov@0')) { continue }
+        $v = [string]$f.Values['Fov@0']
+        if ($v -notmatch '^\s*-?\d+(\.\d+)?\s*$') { continue }
+        $n = [int][math]::Round([double]::Parse($v, $Inv))
+        if ($n -lt 90) { $n = 90 } elseif ($n -gt 120) { $n = 120 }
+        return $n
+    }
+    return 100
+}
+
 function Get-HudPullDefault($Files) {
     foreach ($f in $Files) {
         if ($f.Kind -ne 'Text' -or -not $f.Values.Contains('HUDHorizBound@0')) { continue }
@@ -340,6 +369,7 @@ function New-DefaultPrefs {
         Announcer    = 40             # percent
         HitMarkers   = 50             # percent
         HudPull      = 15             # percent toward the centre (0 = game default edge)
+        Fov          = 100            # multiplayer field of view (90-120)
         HDR          = $false
         HighPriority = $true
         ReadOnly     = $false
@@ -442,6 +472,8 @@ TelescopeVolume|News Feed Audio|AUDIO|Audio from in-game news and messages of th
 CinematicVolume|Cinematic Volume|AUDIO|Cutscene and cinematic audio.|Muted for multiplayer focus.
 MuteLicensedMusic|Licensed Music|AUDIO|Licensed songs in bundles and menus.|Muted. Also safer if you stream.
 VoiceVolume|Announcer / Dialogue|AUDIO|Announcer callouts and character voice lines.|Lower than full, so you still hear UAV and killstreak callouts without them covering footsteps.
+Fov|Field of View|CLARITY|How wide your first-person view is in multiplayer. Higher shows more around you but makes distant enemies smaller and costs a little FPS.|Set from your FOV slider.
+CameraMovement|1st Person Camera Movement|CLARITY|How much the screen shakes and bobs from movement, explosions and getting hit.|Low (50%) cuts the shake that throws your aim off while keeping a little feedback when you take damage.
 MinimapShape|Minimap Shape|CLARITY|Square or round minimap.|Square shows the corners a round minimap cuts off: about 27% more of the map at a glance.
 MinimapRotation|Minimap Rotation|CLARITY|Whether the minimap turns with you or stays fixed north-up.|On: what's ahead of you on the minimap is always ahead of you on screen, so you read threats instantly without turning the map in your head.
 EnemyColor|Enemy Colour|CLARITY|Colour used for enemies on the minimap, nameplates and pings.|Magenta almost never appears on CoD maps, so enemy markers pop instead of blending into red and orange lighting. Only changed if you were still on the default red.
@@ -493,7 +525,7 @@ function Get-Plan($Hw, $Prefs) {
         'DeferredPhysics@0' = 'Low Quality';         'WorldStreamingQuality@0' = 'Low'
         'DxrMode@0' = 'Off';                         'DxrMode@1' = 'Off';           'VRS@0' = 'true'
         'DLSSFrameGeneration@0' = 'false';           'FSRFrameInterpolation@0' = 'false'; 'IntelXeFG@0' = 'false'
-        'SustainabilityMenuSceneResolution@0' = 'off'; 'SustainabilityReduceQualityIdle@0' = 'off'
+        'SustainabilityMenuSceneResolution@0' = 'off'
         'SustainabilityPauseRendering@0' = 'false';  'UserEcoLowBatteryModeUI@0' = 'false'
         'EnableOfflineGameUpdater@0' = 'true'
         'ConfigCloudStorageEnabled@0' = 'false';     'DisableHWChangeDetection@0' = 'true'
@@ -608,6 +640,13 @@ function Get-Plan($Hw, $Prefs) {
 
     $notes.Add('After applying: open the game, Graphics > Restart Shaders Pre-Loading, then restart the game.')
     $notes.Add("If the game asks to 'Set Optimal Settings & Run In Safe Mode', choose No.")
+    # --- View: FOV from the slider, camera shake down to Low for everyone
+    $fov = [int]$Prefs.Fov
+    if ($fov -lt 90) { $fov = 90 } elseif ($fov -gt 120) { $fov = 120 }
+    $c['Fov@0'] = F6 $fov
+    $why['Fov@0'] = "Your FOV slider is at $fov. 100-105 is the competitive sweet spot on a 16:9 monitor: wide peripheral vision without shrinking distant targets."
+    $c['CameraMovement@0'] = 'Low (50%)'
+
     # --- HUD: square minimap and magenta enemies for everyone; HUD position from the slider
     $c['MinimapShape@0'] = 'Square'
     $c['MinimapRotation@1'] = 'On'
@@ -637,6 +676,7 @@ function Get-PreviewRows($Files, $Changes, $Why, $OnlyIf) {
             if ($OnlyIf -and $OnlyIf.ContainsKey($k) -and $cur -ne $OnlyIf[$k]) { continue }
             $fileLabel = $label
             if ($k -like 'HUD*Bound@*') { $fileLabel = 'HUD' }
+            if ($k -like 'Fov@*' -or $k -like 'CameraMovement@*') { $fileLabel = 'View' }
             $ok = Test-CodValue $f.Comments[$k] $new
             $info = Get-SettingInfo $k
             $reason = $info.Why
@@ -772,6 +812,9 @@ if ($Silent) {
     $hw    = Get-HardwareInfo $Files[0]
     $prefs = New-DefaultPrefs
     $prefs.HudPull = Get-HudPullDefault $Files
+    $prefs.Fov = Get-FovDefault $Files
+    $prefs.Announcer = Get-CurrentPercent $Files 'VoiceVolume@0' 40
+    $prefs.HitMarkers = Get-CurrentPercent $Files 'HitMarkersVolume@0' 50
     $plan  = Get-Plan $hw $prefs
     $rows  = Get-PreviewRows $Files $plan.Changes $plan.Why $plan.OnlyIf
     Write-Host "$ToolName $ToolVersion" -ForegroundColor Cyan
@@ -842,6 +885,7 @@ $Tips = @{
     rbSpk    = New-TipXaml 'Speakers' 'AUDIO' 'THX loudspeaker spatial audio on, headphone 3D off, channel count from Windows.' 'Only if you play on speakers or a soundbar.'
     chkMusic = New-TipXaml 'Mute music' 'AUDIO' 'Mutes menu and match music, war tracks, licensed music, news feed audio and cinematics.' 'On, for clean footsteps.'
     slAnn    = New-TipXaml 'Announcer and dialogue' 'AUDIO' 'Volume of announcer callouts (UAV, killstreaks) and character voice lines.' '30-50%: callouts stay clear without masking footsteps.'
+    slFov    = New-TipXaml 'Field of view' 'CLARITY' 'How wide you see in multiplayer (90-120). Higher shows more of what is around you but makes distant enemies smaller and costs a little FPS. Starts at your current in-game FOV. ADS Field of View and Enhanced FOV are left as you set them (keep Enhanced FOV off for max FPS).' '100-105 on a 16:9 monitor. 106-115 for aggressive close-range play or ultrawide.'
     slHud    = New-TipXaml 'HUD position' 'CLARITY' 'Pulls the minimap, ammo counter and killfeed in from the screen corners toward your crosshair. 0% is the game default (screen edge), 100% is as close to the centre as the game allows. Square minimap and magenta enemies are set for you automatically.' 'Around 15% for most players. Go much higher if you never glance at the corner minimap mid-fight.'
     slHit    = New-TipXaml 'Hit markers' 'AUDIO' 'Volume of the hit marker sound when your shots land.' '40-60%: clear feedback that doesn''t drown out footsteps.'
     chkHdr   = New-TipXaml 'HDR' 'CLARITY' 'Turns on HDR output. Only works on an HDR monitor with HDR switched on in Windows.' 'Off, unless you have a proper HDR monitor (OLED or 600+ nits).'
@@ -1362,6 +1406,11 @@ $RowTip = @'
             </DockPanel>
             <Slider x:Name="slHit" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slHit'])</ToolTip></Slider.ToolTip></Slider>
             <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="lblFov" DockPanel.Dock="Right" Foreground="#FF7B45" FontWeight="Bold" FontSize="12"/>
+              <TextBlock Text="Field of view" Foreground="#8C94A3" FontSize="12"/>
+            </DockPanel>
+            <Slider x:Name="slFov" Minimum="90" Maximum="120" TickFrequency="1" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slFov'])</ToolTip></Slider.ToolTip></Slider>
+            <DockPanel Margin="0,6,0,0">
               <TextBlock x:Name="lblHud" DockPanel.Dock="Right" Foreground="#FF7B45" FontWeight="Bold" FontSize="12"/>
               <TextBlock Text="HUD position (edge to centre)" Foreground="#8C94A3" FontSize="12"/>
             </DockPanel>
@@ -1494,7 +1543,7 @@ try {
 }
 $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','tbVendor','tbVram','cbRes','tbHz','tbDrive','tbRam','tbLaunch',
-               'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit','lblHud','slHud',
+               'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit','lblHud','slHud','lblFov','slFov',
                'chkHdr','chkPrio','chkRO','lvPreview','chkAll','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
                'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','tbVersion','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
@@ -1625,6 +1674,7 @@ function Read-Prefs {
     $p.Announcer  = [int]$ui.slAnn.Value
     $p.HitMarkers = [int]$ui.slHit.Value
     $p.HudPull    = [int]$ui.slHud.Value
+    $p.Fov        = [int]$ui.slFov.Value
     $p.HDR        = [bool]$ui.chkHdr.IsChecked
     $p.HighPriority = [bool]$ui.chkPrio.IsChecked
     $p.ReadOnly   = [bool]$ui.chkRO.IsChecked
@@ -1643,6 +1693,7 @@ function Update-Preview {
     try {
         $ui.lblAnn.Text = "$([int]$ui.slAnn.Value)%"
         $ui.lblHit.Text = "$([int]$ui.slHit.Value)%"
+        $ui.lblFov.Text = [string][int]$ui.slFov.Value
         $hudPct = [int]$ui.slHud.Value
         if ($hudPct -ge 100) { $ui.lblHud.Text = 'CENTRE' } elseif ($hudPct -le 0) { $ui.lblHud.Text = 'EDGE' } else { $ui.lblHud.Text = "$hudPct% in" }
         if ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom') { $ui.tbCap.Visibility = [System.Windows.Visibility]::Visible }
@@ -1723,7 +1774,10 @@ $script:Rows = @()
 Show-Hardware $script:Hw
 $ui.rbFps.IsChecked = $true; $ui.rbHead.IsChecked = $true
 $ui.cbImage.SelectedIndex = 0; $ui.cbCap.SelectedIndex = 0
-$ui.chkMusic.IsChecked = $true; $ui.slAnn.Value = 40; $ui.slHit.Value = 50
+$ui.chkMusic.IsChecked = $true
+$ui.slAnn.Value = Get-CurrentPercent $Files 'VoiceVolume@0' 40
+$ui.slHit.Value = Get-CurrentPercent $Files 'HitMarkersVolume@0' 50
+$ui.slFov.Value = Get-FovDefault $Files
 $ui.slHud.Value = Get-HudPullDefault $Files
 $ui.chkHdr.IsChecked = $false; $ui.chkPrio.IsChecked = $true; $ui.chkRO.IsChecked = $false
 Update-Backups
@@ -1732,7 +1786,7 @@ Update-Backups
 foreach ($n in 'tbHz','tbCap') { $ui[$n].Add_LostFocus({ Update-Preview }) }
 foreach ($n in 'cbRes','cbImage','cbCap') { $ui[$n].Add_SelectionChanged({ Update-Preview }) }
 foreach ($n in 'rbFps','rbVis','rbHead','rbSpk','chkMusic','chkHdr','chkPrio','chkRO') { $ui[$n].Add_Click({ Update-Preview }) }
-foreach ($n in 'slAnn','slHit','slHud') { $ui[$n].Add_ValueChanged({ Update-Preview }) }
+foreach ($n in 'slAnn','slHit','slHud','slFov') { $ui[$n].Add_ValueChanged({ Update-Preview }) }
 
 $ui.chkAll.Add_Click({
     if (-not $script:Dt) { return }
