@@ -20,6 +20,24 @@
 
 ---
 
+## 📸 In action
+
+<div align="center">
+
+<img src="assets/screenshot-changes.png" alt="Every change listed before you apply, with tooltips explaining each one" width="100%"/>
+
+<sub><b>See every change before it happens.</b> Hover any row to learn what it does and why it suits your rig.</sub>
+
+<br/><br/>
+
+<img src="assets/screenshot-tuned.png" alt="Locked and loaded - config already tuned" width="100%"/>
+
+<sub><b>Locked and loaded.</b> Run it again any time to check your config is still tuned.</sub>
+
+</div>
+
+---
+
 ## ⚡ Why this one is different
 
 Most config packs copy one person's file onto every PC. That overwrites your monitor, GPU, audio device and driver
