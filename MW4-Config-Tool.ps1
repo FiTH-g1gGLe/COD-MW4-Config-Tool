@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.3.0'
+$ToolVersion     = '1.3.1'
 $Links = @{
     Discord  = 'https://discord.gg/Br7z7zBvFb'
     YouTube  = 'https://www.youtube.com/user/FiTHGAMINGOFFICIAL'
@@ -1162,7 +1162,7 @@ $RowTip = @'
             </Border>
             <StackPanel>
               <TextBlock Style="{StaticResource CardTitle}" Text="CHANGES TO APPLY"/>
-              <TextBlock Text="Hover any row to see what it does and why  &#183;  nothing else in your file is touched" Foreground="#8C94A3" FontSize="11"/>
+              <TextBlock Text="Hover any row to see what it does and why" Foreground="#8C94A3" FontSize="11"/>
             </StackPanel>
           </DockPanel>
 
@@ -1209,7 +1209,7 @@ $RowTip = @'
             <TextBlock DockPanel.Dock="Left" Text="BACKUPS" VerticalAlignment="Center" Foreground="#8C94A3" FontSize="11" FontWeight="Bold"/>
             <ComboBox x:Name="cbBackups" DockPanel.Dock="Left" Width="190" Margin="12,0,0,0" VerticalAlignment="Center"><ComboBox.ToolTip><ToolTip>$($Tips['cbBackups'])</ToolTip></ComboBox.ToolTip></ComboBox>
             <Button x:Name="btnRestore" DockPanel.Dock="Left" Style="{StaticResource BtnBase}" Content="Restore" Margin="8,0,0,0"/>
-            <Button x:Name="btnFolder" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="Open settings folder"/>
+            <Button x:Name="btnFolder" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="Open folder" ToolTip="Open the game settings folder"/>
           </DockPanel>
         </Grid>
       </Border>
@@ -1362,7 +1362,8 @@ function Update-Preview {
     try {
         $ui.lblAnn.Text = "$([int]$ui.slAnn.Value)%"
         $ui.lblHit.Text = "$([int]$ui.slHit.Value)%"
-        $ui.tbCap.Visibility = $(if ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom') { 'Visible' } else { 'Collapsed' })
+        if ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom') { $ui.tbCap.Visibility = [System.Windows.Visibility]::Visible }
+        else { $ui.tbCap.Visibility = [System.Windows.Visibility]::Collapsed }
         $plan = Get-Plan (Read-Hardware) (Read-Prefs)
         $script:Rows = Get-PreviewRows $script:Files $plan.Changes $plan.Why
         # A DataTable binds cleanly in Windows PowerShell 5.1 (a PowerShell array here throws "Argument types do not match").
@@ -1380,7 +1381,11 @@ function Update-Preview {
         $prioNow = Test-PriorityReg
         $extra = $(if ([bool]$ui.chkPrio.IsChecked -ne $prioNow) { ' + CPU priority' } else { '' })
         $ui.tbCount.Text = "$n"
-        $ui.emptyState.Visibility = $(if (@($script:Rows).Count -eq 0) { 'Visible' } else { 'Collapsed' })
+        # Plain if/else: Windows PowerShell 5.1 throws "Argument types do not match" on @(...).Count inside $(if ...)
+        $rowCount = $dt.Rows.Count
+        if ($rowCount -eq 0) { $ui.emptyState.Visibility = [System.Windows.Visibility]::Visible }
+        else { $ui.emptyState.Visibility = [System.Windows.Visibility]::Collapsed }
+        $ui.tbStatus.Foreground = [Windows.Media.Brushes]::White
         $ui.tbStatus.Text = $(if ($n -eq 0 -and -not $extra) { 'Already tuned - nothing to change.' } else { "$n settings will change$extra." })
     } catch { $ui.tbStatus.Foreground = [Windows.Media.Brushes]::OrangeRed; $ui.tbStatus.Text = "Error (line $($_.InvocationInfo.ScriptLineNumber)): $($_.Exception.Message)" }
 }

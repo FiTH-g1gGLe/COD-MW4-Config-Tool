@@ -9,7 +9,7 @@
 <a href="https://github.com/FiTH-g1gGLe/COD-MW4-Config-Tool/archive/refs/heads/main.zip"><img src="https://img.shields.io/badge/DOWNLOAD-LATEST-FF5A1F?style=for-the-badge&logo=github&logoColor=white" alt="Download"/></a>
 <a href="https://discord.gg/Br7z7zBvFb"><img src="https://img.shields.io/badge/JOIN-DISCORD-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"/></a>
 
-<img src="https://img.shields.io/badge/version-1.3.0-FF5A1F?style=flat-square" alt="Version"/>
+<img src="https://img.shields.io/badge/version-1.3.1-FF5A1F?style=flat-square" alt="Version"/>
 <img src="https://img.shields.io/badge/Windows-10%20%7C%2011-0B0D11?style=flat-square&logo=windows&logoColor=white" alt="Windows"/>
 <img src="https://img.shields.io/badge/PowerShell-5.1%2B-0B0D11?style=flat-square&logo=powershell&logoColor=white" alt="PowerShell"/>
 <img src="https://img.shields.io/badge/Call%20of%20Duty-Modern%20Warfare%204-0B0D11?style=flat-square" alt="Modern Warfare 4"/>
