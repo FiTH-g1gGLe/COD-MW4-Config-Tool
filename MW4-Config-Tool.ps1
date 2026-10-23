@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.2.0'
+$ToolVersion     = '1.3.0'
 $Links = @{
     Discord  = 'https://discord.gg/Br7z7zBvFb'
     YouTube  = 'https://www.youtube.com/user/FiTHGAMINGOFFICIAL'
@@ -690,7 +690,7 @@ $RowTip = @'
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="$ToolName" Width="1240" Height="800" MinWidth="1060" MinHeight="660"
+        Title="$ToolName" Width="1320" Height="860" MinWidth="1200" MinHeight="700"
         WindowStartupLocation="CenterScreen" Background="#0B0D11" FontFamily="Segoe UI" FontSize="13"
         TextOptions.TextFormattingMode="Display" UseLayoutRounding="True">
   <Window.Resources>
@@ -981,104 +981,137 @@ $RowTip = @'
     <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
     <!-- ================= HEADER ================= -->
-    <Border Grid.Row="0" Padding="24,18" BorderBrush="#FF5A1F" BorderThickness="0,0,0,2">
+    <Border Grid.Row="0" Padding="26,16,26,16" BorderBrush="#FF5A1F" BorderThickness="0,0,0,2">
       <Border.Background>
-        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-          <GradientStop Color="#2A1206" Offset="0"/>
-          <GradientStop Color="#140C09" Offset="0.35"/>
+        <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+          <GradientStop Color="#2E1407" Offset="0"/>
+          <GradientStop Color="#160D09" Offset="0.45"/>
           <GradientStop Color="#0B0D11" Offset="1"/>
         </LinearGradientBrush>
       </Border.Background>
       <DockPanel LastChildFill="True">
-        <Grid DockPanel.Dock="Left" Width="84" Height="84" Margin="0,0,16,0">
-          <Border x:Name="logoFallback" CornerRadius="14" BorderBrush="#FF5A1F" BorderThickness="2">
+        <!-- FiTH logo -->
+        <Grid DockPanel.Dock="Left" Width="96" Height="96" Margin="0,0,18,0">
+          <Border x:Name="logoFallback" CornerRadius="16" BorderBrush="#FF5A1F" BorderThickness="2">
             <Border.Background>
               <LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#FF7B45" Offset="0"/><GradientStop Color="#B8320A" Offset="1"/></LinearGradientBrush>
             </Border.Background>
-            <TextBlock Text="FiTH" Foreground="White" FontWeight="Black" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            <TextBlock Text="FiTH" Foreground="White" FontWeight="Black" FontSize="22" HorizontalAlignment="Center" VerticalAlignment="Center"/>
           </Border>
           <Image x:Name="imgLogo" Stretch="Uniform" Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality"/>
         </Grid>
 
-        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right">
-          <TextBlock Text="JOIN THE SQUAD" Foreground="#8C94A3" FontSize="11" FontWeight="Bold" HorizontalAlignment="Right" Margin="0,0,0,8"/>
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button x:Name="lnkDiscord" Style="{StaticResource BtnBrand}" Background="#5865F2" BorderBrush="#5865F2" ToolTip="Join the FiTH Gaming Discord">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8BD;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="DISCORD" Foreground="White"/></StackPanel>
-            </Button>
-            <Button x:Name="lnkYouTube" Style="{StaticResource BtnBrand}" Background="#FF0000" BorderBrush="#FF0000" ToolTip="FiTH Gaming on YouTube">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="YOUTUBE" Foreground="White"/></StackPanel>
-            </Button>
-            <Button x:Name="lnkFacebook" Style="{StaticResource BtnBrand}" Background="#1877F2" BorderBrush="#1877F2" ToolTip="FiTH Gaming on Facebook">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE716;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="FACEBOOK" Foreground="White"/></StackPanel>
-            </Button>
-            <Button x:Name="lnkSteam" Style="{StaticResource BtnBrand}" Background="#171A21" BorderBrush="#66C0F4" ToolTip="FiTH Gaming Steam group">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7FC;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="STEAM" Foreground="White"/></StackPanel>
-            </Button>
-            <Button x:Name="lnkWeb" Style="{StaticResource BtnBrand}" Background="#FF5A1F" BorderBrush="#FF5A1F" ToolTip="fithgaming.co.uk">
-              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE774;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="WEBSITE" Foreground="White"/></StackPanel>
-            </Button>
+        <!-- Game badge -->
+        <Border DockPanel.Dock="Right" VerticalAlignment="Center" Background="#AA0B0D11" BorderBrush="#3A2418" BorderThickness="1" CornerRadius="16" Padding="14,10,22,10">
+          <StackPanel Orientation="Horizontal">
+            <Grid Width="70" Height="70" Margin="0,0,14,0">
+              <Ellipse Stroke="#FF5A1F" StrokeThickness="2" Opacity="0.7">
+                <Ellipse.Effect><DropShadowEffect BlurRadius="18" ShadowDepth="0" Opacity="0.8" Color="#FF5A1F"/></Ellipse.Effect>
+              </Ellipse>
+              <Image x:Name="imgGame" Margin="3" Visibility="Collapsed" RenderOptions.BitmapScalingMode="HighQuality"/>
+            </Grid>
+            <StackPanel VerticalAlignment="Center">
+              <TextBlock Text="GAME" Foreground="#8C94A3" FontSize="10" FontWeight="Bold"/>
+              <TextBlock Text="Modern Warfare 4" Foreground="White" FontSize="17" FontWeight="Bold" Margin="0,1,0,4"/>
+              <StackPanel Orientation="Horizontal">
+                <Ellipse Width="8" Height="8" Fill="#3DDC97" VerticalAlignment="Center" Margin="0,0,7,0">
+                  <Ellipse.Effect><DropShadowEffect BlurRadius="8" ShadowDepth="0" Opacity="0.9" Color="#3DDC97"/></Ellipse.Effect>
+                </Ellipse>
+                <TextBlock x:Name="tbGameStatus" Text="Settings found" Foreground="#3DDC97" FontSize="12" FontWeight="SemiBold"/>
+              </StackPanel>
+            </StackPanel>
           </StackPanel>
-        </StackPanel>
+        </Border>
 
-        <Image x:Name="imgGame" DockPanel.Dock="Right" Width="72" Height="72" Margin="0,0,26,0" Visibility="Collapsed"
-               RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
-
+        <!-- Title -->
         <StackPanel VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="g1gGLe'z " FontSize="26" FontWeight="Black" Foreground="#FF5A1F"/>
-            <TextBlock Text="MW4 PERFORMANCE" FontSize="26" FontWeight="Black" Foreground="White"/>
-            <Border Background="#2A1206" BorderBrush="#FF5A1F" BorderThickness="1" CornerRadius="10" Padding="8,2" Margin="12,0,0,0" VerticalAlignment="Center">
-              <TextBlock Text="v$ToolVersion" Foreground="#FF7B45" FontSize="11" FontWeight="Bold"/>
+            <TextBlock Text="g1gGLe'z " FontSize="30" FontWeight="Black" Foreground="#FF5A1F"/>
+            <TextBlock Text="MW4 PERFORMANCE" FontSize="30" FontWeight="Black" Foreground="White"/>
+          </StackPanel>
+          <TextBlock Text="Tuned to YOUR rig  &#183;  max FPS  &#183;  low latency  &#183;  smooth frame times" Foreground="#B9BFCA" FontSize="13" Margin="2,2,0,10"/>
+          <StackPanel Orientation="Horizontal">
+            <Border Background="#2A1206" BorderBrush="#FF5A1F" BorderThickness="1" CornerRadius="10" Padding="10,2" Margin="2,0,8,0">
+              <TextBlock Text="FiTH GAMING" Foreground="#FF7B45" FontSize="10" FontWeight="Bold"/>
+            </Border>
+            <Border Background="#1A1E26" BorderBrush="#272D38" BorderThickness="1" CornerRadius="10" Padding="10,2" Margin="0,0,8,0">
+              <TextBlock Text="v$ToolVersion" Foreground="#B9BFCA" FontSize="10" FontWeight="Bold"/>
+            </Border>
+            <Border Background="#1A1E26" BorderBrush="#272D38" BorderThickness="1" CornerRadius="10" Padding="10,2">
+              <TextBlock Text="FIRE IN THE HOLE" Foreground="#B9BFCA" FontSize="10" FontWeight="Bold"/>
             </Border>
           </StackPanel>
-          <TextBlock Text="Call of Duty: Modern Warfare 4  &#183;  tuned to YOUR PC for max FPS, low latency and rock-solid frame times" Foreground="#B9BFCA" Margin="2,4,0,0"/>
-          <TextBlock Text="FiTH GAMING  &#183;  FIRE IN THE HOLE" Foreground="#FF7B45" FontSize="11" FontWeight="Bold" Margin="2,6,0,0"/>
         </StackPanel>
       </DockPanel>
     </Border>
 
     <!-- ================= BODY ================= -->
-    <Grid Grid.Row="1" Margin="10,8,10,0">
-      <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="310"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+    <Grid Grid.Row="1" Margin="12,10,12,4">
+      <Grid.ColumnDefinitions><ColumnDefinition Width="320"/><ColumnDefinition Width="320"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
 
+      <!-- YOUR RIG -->
       <Border Grid.Column="0" Style="{StaticResource CardBox}">
         <DockPanel>
-          <StackPanel DockPanel.Dock="Top">
+          <StackPanel DockPanel.Dock="Top" Margin="0,0,0,4">
             <TextBlock Style="{StaticResource CardTitle}" Text="YOUR RIG"/>
-            <TextBlock Text="Detected automatically - edit anything that's wrong" Foreground="#8C94A3" FontSize="11"/>
+            <TextBlock Text="Auto-detected  &#183;  edit anything that's wrong" Foreground="#8C94A3" FontSize="11"/>
           </StackPanel>
-          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,6,0">
+          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,4,0">
             <TextBlock Style="{StaticResource Lbl}" Text="CPU"/>
             <TextBox x:Name="tbCpu" IsReadOnly="True"><TextBox.ToolTip><ToolTip>$($Tips['tbCpu'])</ToolTip></TextBox.ToolTip></TextBox>
-            <TextBlock Style="{StaticResource Lbl}" Text="Physical cores (P-cores on Intel hybrid)"/>
-            <TextBox x:Name="tbCores"><TextBox.ToolTip><ToolTip>$($Tips['tbCores'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Graphics card"/>
             <TextBox x:Name="tbGpu"><TextBox.ToolTip><ToolTip>$($Tips['tbGpu'])</ToolTip></TextBox.ToolTip></TextBox>
-            <TextBlock Style="{StaticResource Lbl}" Text="GPU vendor"/>
-            <ComboBox x:Name="cbVendor"><ComboBox.ToolTip><ToolTip>$($Tips['cbVendor'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>NVIDIA</ComboBoxItem><ComboBoxItem>AMD</ComboBoxItem><ComboBoxItem>Intel</ComboBoxItem><ComboBoxItem>Unknown</ComboBoxItem></ComboBox>
-            <TextBlock Style="{StaticResource Lbl}" Text="Video memory (GB)"/>
-            <TextBox x:Name="tbVram"><TextBox.ToolTip><ToolTip>$($Tips['tbVram'])</ToolTip></TextBox.ToolTip></TextBox>
-            <TextBlock Style="{StaticResource Lbl}" Text="Resolution (e.g. 2560x1440)"/>
-            <TextBox x:Name="tbRes"><TextBox.ToolTip><ToolTip>$($Tips['tbRes'])</ToolTip></TextBox.ToolTip></TextBox>
-            <TextBlock Style="{StaticResource Lbl}" Text="Refresh rate (Hz)"/>
-            <TextBox x:Name="tbHz"><TextBox.ToolTip><ToolTip>$($Tips['tbHz'])</ToolTip></TextBox.ToolTip></TextBox>
-            <TextBlock Style="{StaticResource Lbl}" Text="Game drive"/>
-            <ComboBox x:Name="cbDrive"><ComboBox.ToolTip><ToolTip>$($Tips['cbDrive'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>SSD</ComboBoxItem><ComboBoxItem>HDD</ComboBoxItem></ComboBox>
-            <TextBlock x:Name="tbRam" Style="{StaticResource Lbl}"/>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="12"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+              <Grid.RowDefinitions><RowDefinition/><RowDefinition/><RowDefinition/></Grid.RowDefinitions>
+              <StackPanel Grid.Row="0" Grid.Column="0">
+                <TextBlock Style="{StaticResource Lbl}" Text="GPU vendor"/>
+                <ComboBox x:Name="cbVendor"><ComboBox.ToolTip><ToolTip>$($Tips['cbVendor'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>NVIDIA</ComboBoxItem><ComboBoxItem>AMD</ComboBoxItem><ComboBoxItem>Intel</ComboBoxItem><ComboBoxItem>Unknown</ComboBoxItem></ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Row="0" Grid.Column="2">
+                <TextBlock Style="{StaticResource Lbl}" Text="Video memory (GB)"/>
+                <TextBox x:Name="tbVram"><TextBox.ToolTip><ToolTip>$($Tips['tbVram'])</ToolTip></TextBox.ToolTip></TextBox>
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="0">
+                <TextBlock Style="{StaticResource Lbl}" Text="CPU cores"/>
+                <TextBox x:Name="tbCores"><TextBox.ToolTip><ToolTip>$($Tips['tbCores'])</ToolTip></TextBox.ToolTip></TextBox>
+              </StackPanel>
+              <StackPanel Grid.Row="1" Grid.Column="2">
+                <TextBlock Style="{StaticResource Lbl}" Text="Game drive"/>
+                <ComboBox x:Name="cbDrive"><ComboBox.ToolTip><ToolTip>$($Tips['cbDrive'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>SSD</ComboBoxItem><ComboBoxItem>HDD</ComboBoxItem></ComboBox>
+              </StackPanel>
+              <StackPanel Grid.Row="2" Grid.Column="0">
+                <TextBlock Style="{StaticResource Lbl}" Text="Resolution"/>
+                <TextBox x:Name="tbRes"><TextBox.ToolTip><ToolTip>$($Tips['tbRes'])</ToolTip></TextBox.ToolTip></TextBox>
+              </StackPanel>
+              <StackPanel Grid.Row="2" Grid.Column="2">
+                <TextBlock Style="{StaticResource Lbl}" Text="Refresh rate (Hz)"/>
+                <TextBox x:Name="tbHz"><TextBox.ToolTip><ToolTip>$($Tips['tbHz'])</ToolTip></TextBox.ToolTip></TextBox>
+              </StackPanel>
+            </Grid>
+            <Border Background="#1A1E26" CornerRadius="8" Padding="12,9" Margin="0,16,0,0">
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE950;" Foreground="#FF7B45" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <TextBlock x:Name="tbRam" Foreground="#B9BFCA" FontSize="12" VerticalAlignment="Center"/>
+              </DockPanel>
+            </Border>
           </StackPanel></ScrollViewer>
         </DockPanel>
       </Border>
 
+      <!-- LOADOUT -->
       <Border Grid.Column="1" Style="{StaticResource CardBox}">
         <DockPanel>
-          <StackPanel DockPanel.Dock="Top">
+          <StackPanel DockPanel.Dock="Top" Margin="0,0,0,4">
             <TextBlock Style="{StaticResource CardTitle}" Text="LOADOUT"/>
             <TextBlock Text="How you want the game to feel" Foreground="#8C94A3" FontSize="11"/>
           </StackPanel>
-          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,6,0">
+          <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,4,0">
             <TextBlock Style="{StaticResource Lbl}" Text="Goal"/>
-            <WrapPanel><RadioButton x:Name="rbFps" GroupName="goal" Content="Max FPS"><RadioButton.ToolTip><ToolTip>$($Tips['rbFps'])</ToolTip></RadioButton.ToolTip></RadioButton><RadioButton x:Name="rbVis" GroupName="goal" Content="Visibility"><RadioButton.ToolTip><ToolTip>$($Tips['rbVis'])</ToolTip></RadioButton.ToolTip></RadioButton></WrapPanel>
+            <UniformGrid Columns="2">
+              <RadioButton x:Name="rbFps" GroupName="goal" Content="Max FPS"><RadioButton.ToolTip><ToolTip>$($Tips['rbFps'])</ToolTip></RadioButton.ToolTip></RadioButton>
+              <RadioButton x:Name="rbVis" GroupName="goal" Content="Visibility"><RadioButton.ToolTip><ToolTip>$($Tips['rbVis'])</ToolTip></RadioButton.ToolTip></RadioButton>
+            </UniformGrid>
             <TextBlock Style="{StaticResource Lbl}" Text="Image"/>
             <ComboBox x:Name="cbImage"><ComboBox.ToolTip><ToolTip>$($Tips['cbImage'])</ToolTip></ComboBox.ToolTip>
               <ComboBoxItem Tag="Auto">Auto (recommended)</ComboBoxItem>
@@ -1091,66 +1124,131 @@ $RowTip = @'
               <ComboBoxItem Tag="Uncapped">Uncapped</ComboBoxItem>
               <ComboBoxItem Tag="Custom">Custom</ComboBoxItem>
             </ComboBox>
-            <TextBox x:Name="tbCap" IsEnabled="False" Margin="0,6,0,0"><TextBox.ToolTip><ToolTip>$($Tips['tbCap'])</ToolTip></TextBox.ToolTip></TextBox>
+            <TextBox x:Name="tbCap" Visibility="Collapsed" Margin="0,6,0,0"><TextBox.ToolTip><ToolTip>$($Tips['tbCap'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Audio"/>
-            <WrapPanel><RadioButton x:Name="rbHead" GroupName="aud" Content="Headphones"><RadioButton.ToolTip><ToolTip>$($Tips['rbHead'])</ToolTip></RadioButton.ToolTip></RadioButton><RadioButton x:Name="rbSpk" GroupName="aud" Content="Speakers"><RadioButton.ToolTip><ToolTip>$($Tips['rbSpk'])</ToolTip></RadioButton.ToolTip></RadioButton></WrapPanel>
+            <UniformGrid Columns="2">
+              <RadioButton x:Name="rbHead" GroupName="aud" Content="Headphones"><RadioButton.ToolTip><ToolTip>$($Tips['rbHead'])</ToolTip></RadioButton.ToolTip></RadioButton>
+              <RadioButton x:Name="rbSpk" GroupName="aud" Content="Speakers"><RadioButton.ToolTip><ToolTip>$($Tips['rbSpk'])</ToolTip></RadioButton.ToolTip></RadioButton>
+            </UniformGrid>
             <CheckBox x:Name="chkMusic" Content="Mute music and war tracks"><CheckBox.ToolTip><ToolTip>$($Tips['chkMusic'])</ToolTip></CheckBox.ToolTip></CheckBox>
-            <TextBlock x:Name="lblAnn" Style="{StaticResource Lbl}"/>
+            <DockPanel Margin="0,10,0,0">
+              <TextBlock x:Name="lblAnn" DockPanel.Dock="Right" Foreground="#FF7B45" FontWeight="Bold" FontSize="12"/>
+              <TextBlock Text="Announcer / dialogue" Foreground="#8C94A3" FontSize="12"/>
+            </DockPanel>
             <Slider x:Name="slAnn" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slAnn'])</ToolTip></Slider.ToolTip></Slider>
-            <TextBlock x:Name="lblHit" Style="{StaticResource Lbl}"/>
+            <DockPanel Margin="0,6,0,0">
+              <TextBlock x:Name="lblHit" DockPanel.Dock="Right" Foreground="#FF7B45" FontWeight="Bold" FontSize="12"/>
+              <TextBlock Text="Hit markers" Foreground="#8C94A3" FontSize="12"/>
+            </DockPanel>
             <Slider x:Name="slHit" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slHit'])</ToolTip></Slider.ToolTip></Slider>
-            <TextBlock Style="{StaticResource Lbl}" Text="Extras"/>
-            <CheckBox x:Name="chkHdr" Content="HDR on (needs an HDR monitor)"><CheckBox.ToolTip><ToolTip>$($Tips['chkHdr'])</ToolTip></CheckBox.ToolTip></CheckBox>
+            <Border Height="1" Background="#272D38" Margin="0,12,0,6"/>
             <CheckBox x:Name="chkPrio" Content="High CPU priority for cod.exe"><CheckBox.ToolTip><ToolTip>$($Tips['chkPrio'])</ToolTip></CheckBox.ToolTip></CheckBox>
+            <CheckBox x:Name="chkHdr" Content="HDR (needs an HDR monitor)"><CheckBox.ToolTip><ToolTip>$($Tips['chkHdr'])</ToolTip></CheckBox.ToolTip></CheckBox>
             <CheckBox x:Name="chkRO" Content="Lock graphics file (read-only)"><CheckBox.ToolTip><ToolTip>$($Tips['chkRO'])</ToolTip></CheckBox.ToolTip></CheckBox>
           </StackPanel></ScrollViewer>
         </DockPanel>
       </Border>
 
+      <!-- CHANGES -->
       <Border Grid.Column="2" Style="{StaticResource CardBox}">
         <Grid>
-          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-          <DockPanel Grid.Row="0" Margin="0,0,0,10">
-            <Border DockPanel.Dock="Right" Background="#2A1206" BorderBrush="#FF5A1F" BorderThickness="1" CornerRadius="10" Padding="10,3" VerticalAlignment="Center">
-              <TextBlock x:Name="tbCount" Text="0" Foreground="#FF7B45" FontWeight="Bold" FontSize="12"/>
+          <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+          <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <Border DockPanel.Dock="Right" Background="#2A1206" BorderBrush="#FF5A1F" BorderThickness="1" CornerRadius="12" Padding="12,4" VerticalAlignment="Center">
+              <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="tbCount" Text="0" Foreground="#FF7B45" FontWeight="Black" FontSize="13"/>
+                <TextBlock Text=" CHANGES" Foreground="#FF7B45" FontWeight="Bold" FontSize="11" VerticalAlignment="Center"/>
+              </StackPanel>
             </Border>
             <StackPanel>
               <TextBlock Style="{StaticResource CardTitle}" Text="CHANGES TO APPLY"/>
-              <TextBlock Text="Only these values are touched - everything else in your file stays as it is" Foreground="#8C94A3" FontSize="11"/>
+              <TextBlock Text="Hover any row to see what it does and why  &#183;  nothing else in your file is touched" Foreground="#8C94A3" FontSize="11"/>
             </StackPanel>
           </DockPanel>
-          <ListView x:Name="lvPreview" Grid.Row="1" Background="#101318" BorderBrush="#272D38" BorderThickness="1" Foreground="#ECEEF1">
-            <ListView.View><GridView>
-              <GridViewColumn Header="FILE" Width="80"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding File}" Foreground="#8C94A3" Margin="4,0,0,0"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-              <GridViewColumn Header="SETTING" Width="210"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding Setting}" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-              <GridViewColumn Header="NOW" Width="130"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding Current}" Foreground="#8C94A3" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-              <GridViewColumn Header="NEW" Width="130"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding New}" Foreground="#FF7B45" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-              <GridViewColumn Header="STATUS" Width="80"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding Status}" Foreground="#3DDC97" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-            </GridView></ListView.View>
-          </ListView>
-          <Border Grid.Row="2" Background="#1A1E26" CornerRadius="8" Padding="12,10" Margin="0,10,0,0">
-            <TextBlock x:Name="tbNotes" TextWrapping="Wrap" Foreground="#B9BFCA" FontSize="12"/>
+
+          <Grid Grid.Row="1">
+            <ListView x:Name="lvPreview" Background="#101318" BorderBrush="#272D38" BorderThickness="1" Foreground="#ECEEF1">
+              <ListView.View><GridView>
+                <GridViewColumn Header="FILE" Width="78"><GridViewColumn.CellTemplate><DataTemplate>
+                  <TextBlock Text="{Binding File}" Foreground="#8C94A3" Margin="4,0,0,0"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <GridViewColumn Header="SETTING" Width="200"><GridViewColumn.CellTemplate><DataTemplate>
+                  <TextBlock Text="{Binding Setting}" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <GridViewColumn Header="NOW" Width="128"><GridViewColumn.CellTemplate><DataTemplate>
+                  <TextBlock Text="{Binding Current}" Foreground="#8C94A3" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <GridViewColumn Header="NEW" Width="128"><GridViewColumn.CellTemplate><DataTemplate>
+                  <TextBlock Text="{Binding New}" Foreground="#FF7B45" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <GridViewColumn Header="STATUS" Width="76"><GridViewColumn.CellTemplate><DataTemplate>
+                  <TextBlock Text="{Binding Status}" Foreground="#3DDC97" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+              </GridView></ListView.View>
+            </ListView>
+            <!-- shown when there's nothing to change -->
+            <Border x:Name="emptyState" Background="#101318" BorderBrush="#272D38" BorderThickness="1" Visibility="Collapsed">
+              <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <Grid Width="84" Height="84" HorizontalAlignment="Center">
+                  <Ellipse Fill="#0E2A1F" Stroke="#3DDC97" StrokeThickness="2">
+                    <Ellipse.Effect><DropShadowEffect BlurRadius="26" ShadowDepth="0" Opacity="0.55" Color="#3DDC97"/></Ellipse.Effect>
+                  </Ellipse>
+                  <Path Data="M24,43 L37,56 L61,30" Stroke="#3DDC97" StrokeThickness="6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                </Grid>
+                <TextBlock Text="LOCKED AND LOADED" Foreground="White" FontSize="20" FontWeight="Black" HorizontalAlignment="Center" Margin="0,18,0,4"/>
+                <TextBlock Text="Your config already matches this loadout. Nothing to change." Foreground="#8C94A3" FontSize="13" HorizontalAlignment="Center"/>
+                <TextBlock Text="Change an option on the left to see what it would do." Foreground="#5D6573" FontSize="12" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <Border Grid.Row="2" Background="#1A1E26" CornerRadius="8" Padding="12,10" Margin="0,12,0,0">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE946;" Foreground="#FF7B45" VerticalAlignment="Top" Margin="0,2,10,0"/>
+              <TextBlock x:Name="tbNotes" TextWrapping="Wrap" Foreground="#B9BFCA" FontSize="12" LineHeight="18"/>
+            </DockPanel>
           </Border>
+
+          <DockPanel Grid.Row="3" Margin="0,12,0,0" LastChildFill="False">
+            <TextBlock DockPanel.Dock="Left" FontFamily="{StaticResource Icons}" Text="&#xE81C;" Foreground="#8C94A3" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <TextBlock DockPanel.Dock="Left" Text="BACKUPS" VerticalAlignment="Center" Foreground="#8C94A3" FontSize="11" FontWeight="Bold"/>
+            <ComboBox x:Name="cbBackups" DockPanel.Dock="Left" Width="190" Margin="12,0,0,0" VerticalAlignment="Center"><ComboBox.ToolTip><ToolTip>$($Tips['cbBackups'])</ToolTip></ComboBox.ToolTip></ComboBox>
+            <Button x:Name="btnRestore" DockPanel.Dock="Left" Style="{StaticResource BtnBase}" Content="Restore" Margin="8,0,0,0"/>
+            <Button x:Name="btnFolder" DockPanel.Dock="Right" Style="{StaticResource BtnBase}" Content="Open settings folder"/>
+          </DockPanel>
         </Grid>
       </Border>
     </Grid>
 
     <!-- ================= FOOTER ================= -->
-    <Border Grid.Row="2" Background="#101318" BorderBrush="#272D38" BorderThickness="0,1,0,0" Padding="20,12">
+    <Border Grid.Row="2" Background="#0E1015" BorderBrush="#272D38" BorderThickness="0,1,0,0" Padding="24,14">
       <DockPanel LastChildFill="False">
-        <TextBlock DockPanel.Dock="Left" Text="BACKUPS" VerticalAlignment="Center" Foreground="#8C94A3" FontSize="11" FontWeight="Bold"/>
-        <ComboBox x:Name="cbBackups" DockPanel.Dock="Left" Width="200" Margin="10,0,0,0" VerticalAlignment="Center"><ComboBox.ToolTip><ToolTip>$($Tips['cbBackups'])</ToolTip></ComboBox.ToolTip></ComboBox>
-        <Button x:Name="btnRestore" DockPanel.Dock="Left" Style="{StaticResource BtnBase}" Content="Restore" Margin="8,0,0,0"/>
-        <Button x:Name="btnFolder" DockPanel.Dock="Left" Style="{StaticResource BtnBase}" Content="Open settings folder" Margin="8,0,0,0"/>
-        <Button x:Name="btnApply" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Content="APPLY"><Button.ToolTip><ToolTip>$($Tips['btnApply'])</ToolTip></Button.ToolTip></Button>
-        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,16,0">
-          <TextBlock x:Name="tbStatus" HorizontalAlignment="Right" FontWeight="SemiBold"/>
-          <TextBlock Text="made by g1gGLe  &#183;  FiTH Gaming" HorizontalAlignment="Right" Foreground="#5D6573" FontSize="11" Margin="0,2,0,0"/>
+        <StackPanel DockPanel.Dock="Left" VerticalAlignment="Center">
+          <TextBlock Text="JOIN THE SQUAD" Foreground="#8C94A3" FontSize="10" FontWeight="Bold" Margin="0,0,0,7"/>
+          <StackPanel Orientation="Horizontal">
+            <Button x:Name="lnkDiscord" Style="{StaticResource BtnBrand}" Background="#5865F2" BorderBrush="#5865F2" Margin="0,0,6,0" ToolTip="Join the FiTH Gaming Discord">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE8BD;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="DISCORD" Foreground="White"/></StackPanel>
+            </Button>
+            <Button x:Name="lnkYouTube" Style="{StaticResource BtnBrand}" Background="#FF0000" BorderBrush="#FF0000" Margin="0,0,6,0" ToolTip="FiTH Gaming on YouTube">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE714;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="YOUTUBE" Foreground="White"/></StackPanel>
+            </Button>
+            <Button x:Name="lnkFacebook" Style="{StaticResource BtnBrand}" Background="#1877F2" BorderBrush="#1877F2" Margin="0,0,6,0" ToolTip="FiTH Gaming on Facebook">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE716;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="FACEBOOK" Foreground="White"/></StackPanel>
+            </Button>
+            <Button x:Name="lnkSteam" Style="{StaticResource BtnBrand}" Background="#171A21" BorderBrush="#66C0F4" Margin="0,0,6,0" ToolTip="FiTH Gaming Steam group">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE7FC;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="STEAM" Foreground="White"/></StackPanel>
+            </Button>
+            <Button x:Name="lnkWeb" Style="{StaticResource BtnBrand}" Background="#FF5A1F" BorderBrush="#FF5A1F" Margin="0" ToolTip="fithgaming.co.uk">
+              <StackPanel Orientation="Horizontal"><TextBlock FontFamily="{StaticResource Icons}" Text="&#xE774;" Foreground="White" VerticalAlignment="Center" Margin="0,0,7,0"/><TextBlock Text="WEBSITE" Foreground="White"/></StackPanel>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+
+        <Button x:Name="btnApply" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" VerticalAlignment="Center" Padding="40,13" FontSize="15">
+          <Button.ToolTip><ToolTip>$($Tips['btnApply'])</ToolTip></Button.ToolTip>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock FontFamily="{StaticResource Icons}" Text="&#xE945;" Foreground="White" VerticalAlignment="Center" Margin="0,0,10,0"/>
+            <TextBlock Text="APPLY" Foreground="White"/>
+          </StackPanel>
+        </Button>
+        <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,18,0">
+          <TextBlock x:Name="tbStatus" HorizontalAlignment="Right" FontWeight="SemiBold" FontSize="13"/>
+          <TextBlock Text="made by g1gGLe  &#183;  FiTH Gaming" HorizontalAlignment="Right" Foreground="#5D6573" FontSize="11" Margin="0,3,0,0"/>
         </StackPanel>
       </DockPanel>
     </Border>
@@ -1169,7 +1267,7 @@ $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
                'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit',
                'chkHdr','chkPrio','chkRO','lvPreview','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
-               'imgLogo','logoFallback','imgGame','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
+               'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
 }
 
@@ -1188,6 +1286,12 @@ if ($logo) {
     $ui.imgLogo.Source = $logo; $ui.imgLogo.Visibility = 'Visible'; $ui.logoFallback.Visibility = 'Collapsed'
     $Window.Icon = $logo
 }
+$accCount = @($Files | Where-Object { (Split-Path $_.Path -Leaf) -ne $SystemFileName }).Count
+$ui.tbGameStatus.Text = $(if ($accCount -gt 0) { "Settings found  /  $accCount account" } else { 'Settings found' })
+# Fit the window on smaller / scaled screens
+$work = [System.Windows.SystemParameters]::WorkArea
+if ($Window.Height -gt $work.Height - 20) { $Window.Height = [math]::Max($Window.MinHeight, $work.Height - 20) }
+if ($Window.Width  -gt $work.Width  - 20) { $Window.Width  = [math]::Max($Window.MinWidth,  $work.Width  - 20) }
 $game = Get-AssetImage 'game.png'
 if ($game) { $ui.imgGame.Source = $game; $ui.imgGame.Visibility = 'Visible' }
 
@@ -1256,9 +1360,9 @@ function Update-Backups {
 function Update-Preview {
     if (-not $script:Ready) { return }
     try {
-        $ui.lblAnn.Text = "Announcer / dialogue volume: $([int]$ui.slAnn.Value)%"
-        $ui.lblHit.Text = "Hit marker volume: $([int]$ui.slHit.Value)%"
-        $ui.tbCap.IsEnabled = ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom')
+        $ui.lblAnn.Text = "$([int]$ui.slAnn.Value)%"
+        $ui.lblHit.Text = "$([int]$ui.slHit.Value)%"
+        $ui.tbCap.Visibility = $(if ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom') { 'Visible' } else { 'Collapsed' })
         $plan = Get-Plan (Read-Hardware) (Read-Prefs)
         $script:Rows = Get-PreviewRows $script:Files $plan.Changes $plan.Why
         # A DataTable binds cleanly in Windows PowerShell 5.1 (a PowerShell array here throws "Argument types do not match").
@@ -1276,6 +1380,7 @@ function Update-Preview {
         $prioNow = Test-PriorityReg
         $extra = $(if ([bool]$ui.chkPrio.IsChecked -ne $prioNow) { ' + CPU priority' } else { '' })
         $ui.tbCount.Text = "$n"
+        $ui.emptyState.Visibility = $(if (@($script:Rows).Count -eq 0) { 'Visible' } else { 'Collapsed' })
         $ui.tbStatus.Text = $(if ($n -eq 0 -and -not $extra) { 'Already tuned - nothing to change.' } else { "$n settings will change$extra." })
     } catch { $ui.tbStatus.Foreground = [Windows.Media.Brushes]::OrangeRed; $ui.tbStatus.Text = "Error (line $($_.InvocationInfo.ScriptLineNumber)): $($_.Exception.Message)" }
 }
