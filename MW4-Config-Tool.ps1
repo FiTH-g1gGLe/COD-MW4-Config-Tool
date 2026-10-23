@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.7.1'
+$ToolVersion     = '1.7.2'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -640,6 +640,7 @@ function Get-Plan($Hw, $Prefs) {
 
     $notes.Add('After applying: open the game, Graphics > Restart Shaders Pre-Loading, then restart the game.')
     $notes.Add("If the game asks to 'Set Optimal Settings & Run In Safe Mode', choose No.")
+    $notes.Add('Colours washed out or too intense, players hard to see in shade? On NVIDIA: NVIDIA App > System > Displays > Display Properties > Colour accuracy mode: Accurate (OLED and wide-colour monitors).')
     # --- View: FOV from the slider, camera shake down to Low for everyone
     $fov = [int]$Prefs.Fov
     if ($fov -lt 90) { $fov = 90 } elseif ($fov -gt 120) { $fov = 120 }
