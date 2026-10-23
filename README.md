@@ -58,7 +58,7 @@ CPU cores, GPU, video memory, resolution and refresh rate decide the settings, f
 <td width="33%" valign="top">
 
 ### 🔍 See every change
-A live list shows each setting, what it is now and what it will become, *before* anything is written. Hover any row to see what it does and **why** that value suits your PC.
+A live list shows each setting, what it is now and what it will become, *before* anything is written. Hover any row to see what it does and **why** that value suits your PC, and untick anything you'd rather keep.
 
 </td>
 <td width="33%" valign="top">

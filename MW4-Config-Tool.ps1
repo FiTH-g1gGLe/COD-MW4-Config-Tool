@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.5.1'
+$ToolVersion     = '1.6.0'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -201,7 +201,8 @@ function Get-CodFiles {
     $files.Add((Read-CodFile $sys))
     foreach ($d in @(Get-ChildItem -LiteralPath $PlayersPath -Directory -ErrorAction SilentlyContinue)) {
         $acc = Join-Path $d.FullName $AccountFileName
-        if (Test-Path -LiteralPath $acc) { $files.Add((Read-CodFile $acc)) }
+        if (-not (Test-Path -LiteralPath $acc)) { continue }   # not an account folder (e.g. a backup copy)
+        $files.Add((Read-CodFile $acc))
         # Binary settings may sit in a sub folder (SteamCloud on Steam)
         foreach ($binName in @($BinSettings | ForEach-Object { $_.File } | Select-Object -Unique)) {
             $bin = Get-ChildItem -LiteralPath $d.FullName -Recurse -File -Filter $binName -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -866,7 +867,7 @@ $RowTip = @'
   <Border Margin="0,6,0,0" Padding="10,7" CornerRadius="7" Background="#0E2A1F" BorderBrush="#1F5E43" BorderThickness="1">
     <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#3DDC97"><Run FontWeight="Bold" Text="Why: "/><Run Text="{Binding Why, Mode=OneWay}"/></TextBlock>
   </Border>
-  <TextBlock Text="{Binding Key}" Foreground="#5D6573" FontSize="10" Margin="0,8,0,0"/>
+  <TextBlock Foreground="#5D6573" FontSize="10" Margin="0,8,0,0" TextWrapping="Wrap"><Run Text="{Binding Key, Mode=OneWay}"/><Run Text="   |   "/><Run Text="{Binding Status, Mode=OneWay}"/></TextBlock>
 </StackPanel>
 '@
 
@@ -1117,6 +1118,9 @@ $RowTip = @'
           </ControlTemplate.Triggers>
         </ControlTemplate>
       </Setter.Value></Setter>
+      <Style.Triggers>
+        <DataTrigger Binding="{Binding Apply}" Value="False"><Setter Property="Opacity" Value="0.42"/></DataTrigger>
+      </Style.Triggers>
     </Style>
 
     <!-- Slim scroll bars -->
@@ -1376,16 +1380,20 @@ $RowTip = @'
           <Grid Grid.Row="1">
             <ListView x:Name="lvPreview" Background="#101318" BorderBrush="#272D38" BorderThickness="1" Foreground="#ECEEF1">
               <ListView.View><GridView>
-                <GridViewColumn Header="FILE" Width="78"><GridViewColumn.CellTemplate><DataTemplate>
+                <GridViewColumn Width="46">
+                  <GridViewColumn.Header><CheckBox x:Name="chkAll" IsChecked="True" Margin="2,0,0,0" ToolTip="Tick or untick every change"/></GridViewColumn.Header>
+                  <GridViewColumn.CellTemplate><DataTemplate>
+                    <CheckBox IsChecked="{Binding Apply, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" IsEnabled="{Binding CanApply}" Margin="6,0,0,0"/>
+                  </DataTemplate></GridViewColumn.CellTemplate>
+                </GridViewColumn>
+                <GridViewColumn Header="FILE" Width="74"><GridViewColumn.CellTemplate><DataTemplate>
                   <TextBlock Text="{Binding File}" Foreground="#8C94A3" Margin="4,0,0,0"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
                 <GridViewColumn Header="SETTING" Width="200"><GridViewColumn.CellTemplate><DataTemplate>
                   <TextBlock Text="{Binding Setting}" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-                <GridViewColumn Header="NOW" Width="128"><GridViewColumn.CellTemplate><DataTemplate>
+                <GridViewColumn Header="NOW" Width="126"><GridViewColumn.CellTemplate><DataTemplate>
                   <TextBlock Text="{Binding Current}" Foreground="#8C94A3" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-                <GridViewColumn Header="NEW" Width="128"><GridViewColumn.CellTemplate><DataTemplate>
+                <GridViewColumn Header="NEW" Width="126"><GridViewColumn.CellTemplate><DataTemplate>
                   <TextBlock Text="{Binding New}" Foreground="#FF7B45" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
-                <GridViewColumn Header="STATUS" Width="76"><GridViewColumn.CellTemplate><DataTemplate>
-                  <TextBlock Text="{Binding Status}" Foreground="#3DDC97" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
               </GridView></ListView.View>
             </ListView>
             <!-- shown when there's nothing to change -->
@@ -1473,7 +1481,7 @@ try {
 $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
                'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit','lblHud','slHud',
-               'chkHdr','chkPrio','chkRO','lvPreview','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
+               'chkHdr','chkPrio','chkRO','lvPreview','chkAll','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
                'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','tbVersion','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
 }
@@ -1580,27 +1588,70 @@ function Update-Preview {
         $dt = New-Object System.Data.DataTable
         $cols = 'File', 'Setting', 'Key', 'Current', 'New', 'Status', 'Info', 'Impact', 'Why'
         foreach ($col in $cols) { [void]$dt.Columns.Add($col, [string]) }
+        [void]$dt.Columns.Add('Id', [string]); [void]$dt.Columns.Add('Apply', [bool]); [void]$dt.Columns.Add('CanApply', [bool])
         foreach ($r in $script:Rows) {
             $dr = $dt.NewRow()
             foreach ($col in $cols) { $dr[$col] = [string]$r.$col }
+            $id = [string]$r.Path + '|' + [string]$r.Key
+            $can = ($r.Status -eq 'change')
+            $dr['Id'] = $id; $dr['CanApply'] = $can
+            $dr['Apply'] = ($can -and -not $script:Unticked.Contains($id))
             $dt.Rows.Add($dr)
         }
+        # Remember what the player unticks, so refreshing the list keeps their choices
+        $dt.Add_ColumnChanged({
+            param($sender, $e)
+            if ($e.Column.ColumnName -ne 'Apply') { return }
+            $rid = [string]$e.Row['Id']
+            if ([bool]$e.Row['Apply']) { [void]$script:Unticked.Remove($rid) } else { [void]$script:Unticked.Add($rid) }
+            Update-Counts
+        })
+        $script:Dt = $dt
         $ui.lvPreview.ItemsSource = $dt.DefaultView
         $ui.tbNotes.Text = ($plan.Notes | ForEach-Object { "- $_" }) -join "`n"
-        $n = @($script:Rows | Where-Object { $_.Status -eq 'change' }).Count
-        $prioNow = Test-PriorityReg
-        $extra = $(if ([bool]$ui.chkPrio.IsChecked -ne $prioNow) { ' + CPU priority' } else { '' })
-        $ui.tbCount.Text = "$n"
         # Plain if/else: Windows PowerShell 5.1 throws "Argument types do not match" on @(...).Count inside $(if ...)
         $rowCount = $dt.Rows.Count
         if ($rowCount -eq 0) { $ui.emptyState.Visibility = [System.Windows.Visibility]::Visible }
         else { $ui.emptyState.Visibility = [System.Windows.Visibility]::Collapsed }
-        $ui.tbStatus.Foreground = [Windows.Media.Brushes]::White
-        $ui.tbStatus.Text = $(if ($n -eq 0 -and -not $extra) { 'Already tuned - nothing to change.' } else { "$n settings will change$extra." })
+        Update-Counts
     } catch { $ui.tbStatus.Foreground = [Windows.Media.Brushes]::OrangeRed; $ui.tbStatus.Text = "Error (line $($_.InvocationInfo.ScriptLineNumber)): $($_.Exception.Message)" }
 }
 
+function Get-SelectedRows {
+    $sel = New-Object System.Collections.Generic.List[object]
+    if (-not $script:Dt) { return ,$sel }
+    for ($i = 0; $i -lt $script:Dt.Rows.Count; $i++) {
+        if ([bool]$script:Dt.Rows[$i]['Apply']) { $sel.Add($script:Rows[$i]) }
+    }
+    return ,$sel
+}
+
+function Update-Counts {
+    $total = 0; $picked = 0
+    if ($script:Dt) {
+        foreach ($row in $script:Dt.Rows) {
+            if ([bool]$row['CanApply']) { $total++ }
+            if ([bool]$row['Apply']) { $picked++ }
+        }
+    }
+    $ui.tbCount.Text = "$picked"
+    $script:SyncingAll = $true
+    if ($total -gt 0 -and $picked -eq $total) { $ui.chkAll.IsChecked = $true }
+    elseif ($picked -eq 0) { $ui.chkAll.IsChecked = $false }
+    else { $ui.chkAll.IsChecked = $null }
+    $script:SyncingAll = $false
+    $extra = ''
+    if ([bool]$ui.chkPrio.IsChecked -ne (Test-PriorityReg)) { $extra = ' + CPU priority' }
+    $ui.tbStatus.Foreground = [Windows.Media.Brushes]::White
+    if ($total -eq 0 -and -not $extra) { $ui.tbStatus.Text = 'Already tuned - nothing to change.' }
+    elseif ($picked -eq $total) { $ui.tbStatus.Text = "$picked settings will change$extra." }
+    else { $ui.tbStatus.Text = "$picked of $total changes selected$extra." }
+}
+
 # Initial state
+$script:Unticked = New-Object 'System.Collections.Generic.HashSet[string]'
+$script:Dt = $null
+$script:SyncingAll = $false
 $script:Ready = $false
 $script:Hw = Get-HardwareInfo $Files[0]
 $script:Rows = @()
@@ -1618,11 +1669,24 @@ foreach ($n in 'cbVendor','cbDrive','cbImage','cbCap') { $ui[$n].Add_SelectionCh
 foreach ($n in 'rbFps','rbVis','rbHead','rbSpk','chkMusic','chkHdr','chkPrio','chkRO') { $ui[$n].Add_Click({ Update-Preview }) }
 foreach ($n in 'slAnn','slHit','slHud') { $ui[$n].Add_ValueChanged({ Update-Preview }) }
 
+$ui.chkAll.Add_Click({
+    if (-not $script:Dt) { return }
+    $want = ($ui.chkAll.IsChecked -eq $true)
+    foreach ($row in $script:Dt.Rows) { if ([bool]$row['CanApply']) { $row['Apply'] = $want } }
+    Update-Counts
+})
+
 $ui.btnApply.Add_Click({
     try {
         Update-Preview
         $prefs = Read-Prefs
-        $b = Invoke-Apply $script:Files $script:Rows $prefs.ReadOnly
+        $selected = Get-SelectedRows
+        $prioChange = ([bool]$prefs.HighPriority -ne (Test-PriorityReg))
+        if ($selected.Count -eq 0 -and -not $prioChange) {
+            [Windows.MessageBox]::Show('Nothing is ticked. Tick the changes you want, then press Apply.', $ToolName, 'OK', 'Information') | Out-Null
+            return
+        }
+        $b = Invoke-Apply $script:Files $selected $prefs.ReadOnly
         $prioOk = Set-PriorityReg $prefs.HighPriority
         $script:Files = Get-CodFiles
         Update-Backups
