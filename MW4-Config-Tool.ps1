@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.4.0'
+$ToolVersion     = '1.4.1'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -1090,7 +1090,7 @@ $RowTip = @'
               <TextBlock Text="FiTH GAMING" Foreground="#FF7B45" FontSize="10" FontWeight="Bold"/>
             </Border>
             <Border Background="#1A1E26" BorderBrush="#272D38" BorderThickness="1" CornerRadius="10" Padding="10,2" Margin="0,0,8,0">
-              <TextBlock Text="v$ToolVersion" Foreground="#B9BFCA" FontSize="10" FontWeight="Bold"/>
+              <TextBlock x:Name="tbVersion" Text="v$ToolVersion" Foreground="#B9BFCA" FontSize="10" FontWeight="Bold"/>
             </Border>
             <Border Background="#1A1E26" BorderBrush="#272D38" BorderThickness="1" CornerRadius="10" Padding="10,2">
               <TextBlock Text="FIRE IN THE HOLE" Foreground="#B9BFCA" FontSize="10" FontWeight="Bold"/>
@@ -1341,7 +1341,7 @@ $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
                'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit',
                'chkHdr','chkPrio','chkRO','lvPreview','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
-               'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
+               'imgLogo','logoFallback','imgGame','emptyState','tbGameStatus','updateBar','tbVersion','btnUpdate','btnUpdateLater','tbUpdateTitle','tbUpdateInfo','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
 }
 
@@ -1548,8 +1548,14 @@ if (-not $NoUpdateCheck) {
                 $script:UpdPs.Dispose()
                 $info = $null
                 foreach ($item in $res) { if ($item) { $info = $item } }
+                if ($info -and $info.Tag -and -not (Test-NewerVersion $info.Tag $ToolVersion)) {
+                    $ui.tbVersion.Text = "v$ToolVersion  |  UP TO DATE"
+                    $ui.tbVersion.Foreground = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(61, 220, 151))
+                }
                 if ($info -and $info.Url -and (Test-NewerVersion $info.Tag $ToolVersion)) {
                     $script:UpdateInfo = $info
+                    $ui.tbVersion.Text = "v$ToolVersion  |  UPDATE READY"
+                    $ui.tbVersion.Foreground = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(255, 123, 69))
                     $ui.tbUpdateTitle.Text = "Update available: $($info.Tag)"
                     $ui.tbUpdateInfo.Text = "You have v$ToolVersion. One click updates the tool and restarts it - your game settings and backups stay as they are."
                     $ui.updateBar.Visibility = [System.Windows.Visibility]::Visible
