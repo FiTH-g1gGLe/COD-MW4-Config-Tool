@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.1.0'
+$ToolVersion     = '1.1.1'
 $Links = @{
     Discord  = 'https://discord.gg/Br7z7zBvFb'
     YouTube  = 'https://www.youtube.com/user/FiTHGAMINGOFFICIAL'
@@ -755,7 +755,7 @@ if (-not $Files) {
         </LinearGradientBrush>
       </Border.Background>
       <DockPanel LastChildFill="True">
-        <Grid DockPanel.Dock="Left" Width="64" Height="64" Margin="0,0,18,0">
+        <Grid DockPanel.Dock="Left" Width="84" Height="84" Margin="0,0,16,0">
           <Border x:Name="logoFallback" CornerRadius="14" BorderBrush="#FF5A1F" BorderThickness="2">
             <Border.Background>
               <LinearGradientBrush StartPoint="0,0" EndPoint="1,1"><GradientStop Color="#FF7B45" Offset="0"/><GradientStop Color="#B8320A" Offset="1"/></LinearGradientBrush>
@@ -785,6 +785,9 @@ if (-not $Files) {
             </Button>
           </StackPanel>
         </StackPanel>
+
+        <Image x:Name="imgGame" DockPanel.Dock="Right" Width="72" Height="72" Margin="0,0,26,0" Visibility="Collapsed"
+               RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
 
         <StackPanel VerticalAlignment="Center">
           <StackPanel Orientation="Horizontal">
@@ -931,22 +934,27 @@ $ui = @{}
 foreach ($n in 'tbCpu','tbCores','tbGpu','cbVendor','tbVram','tbRes','tbHz','cbDrive','tbRam',
                'rbFps','rbVis','cbImage','cbCap','tbCap','rbHead','rbSpk','chkMusic','lblAnn','slAnn','lblHit','slHit',
                'chkHdr','chkPrio','chkRO','lvPreview','tbNotes','tbCount','cbBackups','btnRestore','btnFolder','btnApply','tbStatus',
-               'imgLogo','logoFallback','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
+               'imgLogo','logoFallback','imgGame','lnkDiscord','lnkYouTube','lnkFacebook','lnkSteam','lnkWeb') {
     $ui[$n] = $Window.FindName($n)
 }
 
-# Logo: assets\logo.png next to the script replaces the FiTH text badge (and becomes the window icon)
-$logoPath = Join-Path $PSScriptRoot 'assets\logo.png'
-if (Test-Path -LiteralPath $logoPath) {
+# Branding images next to the script: assets\logo.png (header + window icon), assets\game.png (optional game icon)
+function Get-AssetImage([string]$Name) {
+    $path = Join-Path $PSScriptRoot "assets\$Name"
+    if (-not (Test-Path -LiteralPath $path)) { return $null }
     try {
         $bmp = New-Object System.Windows.Media.Imaging.BitmapImage
-        $bmp.BeginInit(); $bmp.CacheOption = 'OnLoad'; $bmp.UriSource = New-Object Uri($logoPath); $bmp.EndInit()
-        $ui.imgLogo.Source = $bmp
-        $ui.imgLogo.Visibility = 'Visible'
-        $ui.logoFallback.Visibility = 'Collapsed'
-        $Window.Icon = $bmp
-    } catch { }
+        $bmp.BeginInit(); $bmp.CacheOption = 'OnLoad'; $bmp.UriSource = New-Object Uri($path); $bmp.EndInit()
+        return $bmp
+    } catch { return $null }
 }
+$logo = Get-AssetImage 'logo.png'
+if ($logo) {
+    $ui.imgLogo.Source = $logo; $ui.imgLogo.Visibility = 'Visible'; $ui.logoFallback.Visibility = 'Collapsed'
+    $Window.Icon = $logo
+}
+$game = Get-AssetImage 'game.png'
+if ($game) { $ui.imgGame.Source = $game; $ui.imgGame.Visibility = 'Visible' }
 
 # Community links
 $ui.lnkDiscord.Tag  = $Links.Discord;  $ui.lnkYouTube.Tag = $Links.YouTube; $ui.lnkFacebook.Tag = $Links.Facebook
