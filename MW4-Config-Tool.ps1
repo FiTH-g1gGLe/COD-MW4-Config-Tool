@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'MW4 Config Tool'
-$ToolVersion     = '1.0.1'
+$ToolVersion     = '1.0.2'
 $SystemFileName  = 's.1.0.cod26.txt'      # graphics / display / system settings (per PC)
 $AccountFileName = 'g.cod26.1.0.l.txt'    # audio / mouse / FOV settings (per account, in a sub folder)
 $GameProcess     = 'cod'                  # cod.exe
@@ -671,8 +671,16 @@ function Update-Preview {
         $ui.tbCap.IsEnabled = ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom')
         $plan = Get-Plan (Read-Hardware) (Read-Prefs)
         $script:Rows = Get-PreviewRows $script:Files $plan.Changes
-        $ui.lvPreview.ItemsSource = $null
-        $ui.lvPreview.ItemsSource = @($script:Rows)
+        # A DataTable binds cleanly in Windows PowerShell 5.1 (a PowerShell array here throws "Argument types do not match").
+        $dt = New-Object System.Data.DataTable
+        foreach ($col in 'File', 'Setting', 'Current', 'New', 'Status') { [void]$dt.Columns.Add($col, [string]) }
+        foreach ($r in $script:Rows) {
+            $dr = $dt.NewRow()
+            $dr['File'] = [string]$r.File; $dr['Setting'] = [string]$r.Setting
+            $dr['Current'] = [string]$r.Current; $dr['New'] = [string]$r.New; $dr['Status'] = [string]$r.Status
+            $dt.Rows.Add($dr)
+        }
+        $ui.lvPreview.ItemsSource = $dt.DefaultView
         $ui.tbNotes.Text = ($plan.Notes | ForEach-Object { "- $_" }) -join "`n"
         $n = @($script:Rows | Where-Object { $_.Status -eq 'change' }).Count
         $prioNow = Test-PriorityReg
