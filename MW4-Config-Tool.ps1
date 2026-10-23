@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.7.0'
+$ToolVersion     = '1.7.1'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -473,7 +473,7 @@ CinematicVolume|Cinematic Volume|AUDIO|Cutscene and cinematic audio.|Muted for m
 MuteLicensedMusic|Licensed Music|AUDIO|Licensed songs in bundles and menus.|Muted. Also safer if you stream.
 VoiceVolume|Announcer / Dialogue|AUDIO|Announcer callouts and character voice lines.|Lower than full, so you still hear UAV and killstreak callouts without them covering footsteps.
 Fov|Field of View|CLARITY|How wide your first-person view is in multiplayer. Higher shows more around you but makes distant enemies smaller and costs a little FPS.|Set from your FOV slider.
-CameraMovement|1st Person Camera Movement|CLARITY|How much the screen shakes and bobs from movement, explosions and getting hit.|Low (50%) cuts the shake that throws your aim off while keeping a little feedback when you take damage.
+CameraMovement|1st Person Camera Movement|CLARITY|How much the screen shakes and bobs from movement, explosions and getting hit.|Minimal (25%) is the lowest the game offers: far less screen shake from movement and explosions, so your crosshair stays steady. Flinch when you're shot is gameplay and isn't affected.
 MinimapShape|Minimap Shape|CLARITY|Square or round minimap.|Square shows the corners a round minimap cuts off: about 27% more of the map at a glance.
 MinimapRotation|Minimap Rotation|CLARITY|Whether the minimap turns with you or stays fixed north-up.|On: what's ahead of you on the minimap is always ahead of you on screen, so you read threats instantly without turning the map in your head.
 EnemyColor|Enemy Colour|CLARITY|Colour used for enemies on the minimap, nameplates and pings.|Magenta almost never appears on CoD maps, so enemy markers pop instead of blending into red and orange lighting. Only changed if you were still on the default red.
@@ -645,7 +645,7 @@ function Get-Plan($Hw, $Prefs) {
     if ($fov -lt 90) { $fov = 90 } elseif ($fov -gt 120) { $fov = 120 }
     $c['Fov@0'] = F6 $fov
     $why['Fov@0'] = "Your FOV slider is at $fov. 100-105 is the competitive sweet spot on a 16:9 monitor: wide peripheral vision without shrinking distant targets."
-    $c['CameraMovement@0'] = 'Low (50%)'
+    $c['CameraMovement@0'] = 'Minimal (25%)'
 
     # --- HUD: square minimap and magenta enemies for everyone; HUD position from the slider
     $c['MinimapShape@0'] = 'Square'
