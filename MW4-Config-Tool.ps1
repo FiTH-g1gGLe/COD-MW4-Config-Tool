@@ -32,7 +32,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.1.2'
+$ToolVersion     = '1.2.0'
 $Links = @{
     Discord  = 'https://discord.gg/Br7z7zBvFb'
     YouTube  = 'https://www.youtube.com/user/FiTHGAMINGOFFICIAL'
@@ -239,8 +239,120 @@ function New-DefaultPrefs {
     }
 }
 
+# ---------------------------------------------------------------------------------------------
+#  Settings knowledge base - powers the tooltips in the change list
+#  Format: Key | Friendly name | Impact | What it does | Why this value
+# ---------------------------------------------------------------------------------------------
+$SettingInfoText = @'
+ResolutionMultiplier|Render Resolution|BIG FPS|Percentage of your screen resolution the 3D world is drawn at. Lower values look blurry and make far-away enemies hard to spot.|100% keeps the image sharp. If you need more FPS, an upscaler (DLSS/FSR/XeSS) gives far better results than lowering this.
+DynamicSceneResolution|Dynamic Resolution|STABILITY|Drops resolution on the fly when the GPU is busy, so the image softens mid-fight.|Off, so the picture stays consistently sharp. The FPS cap keeps things stable instead.
+DisplayMode|Display Mode|LATENCY|How the game owns your screen: windowed, borderless or exclusive fullscreen.|Exclusive Fullscreen gives the game direct control of the display for the lowest input lag.
+PreferredDisplayMode|Preferred Display Mode|LATENCY|The display mode the game falls back to when it starts.|Matches Display Mode so the game always starts in exclusive Fullscreen.
+VSync|V-Sync (in game)|LATENCY|Locks frames to your refresh rate to stop tearing, but adds noticeable input lag.|Off. The FPS cap plus Reflex/Anti-Lag gives smooth frames without the lag. Use G-Sync/FreeSync if your monitor has it.
+VSyncInMenu|V-Sync (menus)|SMALL FPS|V-Sync while in menus only.|Off. Menus already have their own frame cap.
+FocusedMode|Focused Mode|COMFORT|Dims everything outside the game window.|Off. Not needed when the game is fullscreen.
+MotionBlur|Motion Blur|CLARITY|Smears the screen when you turn or move.|Off. Blur hides enemies during fast flicks and costs frames.
+WeaponMotionBlur|Weapon Motion Blur|CLARITY|Blurs your gun when moving.|Off, for a clean view of your sights.
+EnableVelocityBasedBlur|Velocity Blur|CLARITY|Radial blur around the edges of the screen when you sprint or slide.|Off. It narrows your effective view at the worst moments.
+DofEnable|Depth of Field|CLARITY|Blurs things that are not in focus, like the background when aiming.|Off, so everything at every distance stays readable.
+DofWorldDisable|World Depth of Field|CLARITY|Depth of field applied to the world around you.|Disabled for a clear background when aiming.
+DofWeaponDisable|Weapon Depth of Field|CLARITY|Depth of field applied to your weapon.|Disabled for a crisp weapon and sights.
+DepthOfFieldQuality|Depth of Field Quality|SMALL FPS|Quality of the blur filter if depth of field is used anywhere.|Low, the cheapest option, as depth of field is off anyway.
+BloodLimit|Blood Limit|SMALL FPS|Limits how often blood effects can stack up.|On, to stop blood effects piling up in busy fights.
+BloodLimitInterval|Blood Limit Interval|SMALL FPS|Minimum time between blood effects when Blood Limit is on.|2000 ms, the maximum, for the fewest blood effects.
+ShowBlood|Blood Effects|CLARITY|Blood splatter on hits and on the screen.|Off. Less visual noise covering targets.
+ShowBrass|Ejected Brass|SMALL FPS|Spent bullet casings flying out of guns.|Off. Pure eye candy that costs a little CPU in firefights.
+MarksEntsPlayerOnly|Bullet Marks|SMALL FPS|Bullet marks on players and objects.|Only from your own shots, so other players' fire doesn't add clutter.
+CorpseLimit|Corpse Limit|SMALL FPS|Maximum number of AI bodies left lying around (campaign and zombies).|0, so bodies disappear and free up CPU and GPU time.
+CorpsesCullingThreshold|Corpse Culling|SMALL FPS|How aggressively bodies are removed.|0.5, the most aggressive setting.
+PersistentDamageLayer|Persistent Damage|FPS|Keeps bullet holes and damage on walls and objects for the whole match.|Off. Decals pile up over a match and slowly cost frames.
+SubdivisionLevel|Surface Subdivision|FPS|Extra geometry detail on curved surfaces.|0. Hard to notice in a fight, but costs GPU time.
+ReflectionProbeRelighting|Reflection Relighting|SMALL FPS|How many stages are used to update reflections when lighting changes.|1, the cheapest. Reflections barely matter for gameplay.
+ReflectionProbeHalfResolution|Half-Res Reflections|SMALL FPS|Draws reflection probes at half resolution.|On. Saves GPU time with no real visual loss.
+StaticSunshadowClipmapResolution|Static Sun Shadows|FPS|Resolution of the pre-baked sun shadow map.|0, the lowest. Shadows are one of the most expensive effects.
+CinematicEmissive|In-Game Cinematics|COMFORT|Plays full in-engine cinematics.|Off, for faster and lighter cutscenes.
+CinematicQuality|Fallback Movies|COMFORT|Uses lighter pre-rendered movies for cutscenes.|On. Lighter to play and loads faster.
+ModelQuality|Model Quality|FPS|Detail of characters, weapons and objects.|Low. Enemies keep the same shape and outline, but they're cheaper to draw.
+ParticleQuality|Particle Quality|FPS|Detail of smoke, sparks, explosions and dust.|Very low. Thinner smoke and effects are easier to see through.
+ShadowQuality|Shadow Quality|BIG FPS|Resolution and detail of shadows.|Very Low. Shadows are one of the biggest FPS costs in the game.
+ShadowFilteringQuality|Shadow Filtering|FPS|Softening of shadow edges.|Low. Sharp shadow edges cost less.
+ScreenSpaceShadowQuality|Screen Space Shadows|FPS|Extra fine contact shadows.|Off. Expensive for very little visible difference.
+ShadingQuality|Shading Quality|FPS|Precision of lighting calculations on surfaces.|Low for more FPS.
+ShaderQuality|Shader Quality|STABILITY|Complexity of the shaders the game compiles.|Low. Lighter shaders mean shorter shader compiling and fewer hitches.
+SSRQuality|Screen Space Reflections|FPS|Real-time reflections on floors, water and glass.|Off. Costly, and reflections can show fake movement.
+VolumetricQuality|Volumetric Lighting|FPS|Light shafts, fog and haze.|Low. Less fog means better visibility and more FPS.
+WaterCausticsMode|Water Caustics|SMALL FPS|Rippling light patterns under water.|Off. Eye candy only.
+WaterWaveWetness|Wave Wetness|SMALL FPS|Wet look on surfaces hit by waves.|Off. Eye candy only.
+WeatherGridVolumesQuality|Weather Volumes|FPS|Detail of rain, snow and weather effects.|Off. Less screen clutter and more FPS.
+AmbientLightingQuality|Ambient Lighting|FPS|Extra indirect lighting in the world.|Off. Can make dark corners darker, but costs a lot of GPU time.
+TerrainQuality|Terrain Quality|FPS|Detail of the ground and landscape.|Very Low for more FPS.
+Tessellation|Tessellation|FPS|Adds geometry detail to surfaces up close or everywhere.|Off. Heavy on the GPU for small detail.
+DeferredPhysics|Deferred Physics|SMALL FPS|Quality of background physics like debris.|Low Quality. Debris barely matters in a gunfight.
+WorldStreamingQuality|World Streaming|STABILITY|How much detail is streamed in as you move around the map.|Low, to reduce streaming stutter and memory use.
+DxrMode|Ray Tracing|BIG FPS|Hardware ray-traced lighting and reflections.|Off. Ray tracing is a huge FPS cost in competitive play.
+VRS|Variable Rate Shading|FPS|Shades less important parts of the screen at lower detail.|On. Free FPS with almost no visible difference.
+DLSSFrameGeneration|DLSS Frame Generation|LATENCY|Inserts AI-generated frames between real ones.|Off. It adds input lag, and generated frames don't help you aim.
+FSRFrameInterpolation|FSR Frame Generation|LATENCY|AMD's version of generated in-between frames.|Off, for the same reason as DLSS Frame Generation.
+IntelXeFG|XeSS Frame Generation|LATENCY|Intel's version of generated in-between frames.|Off, for the same reason as DLSS Frame Generation.
+SustainabilityMenuSceneResolution|Menu Power Saving|COMFORT|Lowers resolution in menus to save power.|Off, so menus and the lobby stay sharp.
+SustainabilityReduceQualityIdle|Idle Power Saving|STABILITY|Lowers quality when you are idle for a while.|Off, so quality never changes underneath you.
+SustainabilityPauseRendering|Pause Rendering|COMFORT|Stops drawing the game when paused or out of focus.|Off, so alt-tabbing back is instant.
+UserEcoLowBatteryModeUI|Low Battery Mode|STABILITY|Reduces quality to save battery on laptops.|Off. Plug in and get full performance.
+EnableOfflineGameUpdater|Shader Pre-Loading|STABILITY|Compiles shaders ahead of time instead of during matches.|On. The number one fix for stutter in Call of Duty.
+ConfigCloudStorageEnabled|Cloud Config Sync|STABILITY|Syncs your settings files with the cloud.|Off, so the cloud can't overwrite your tuned settings.
+DisableHWChangeDetection|Hardware Change Reset|STABILITY|Resets settings when the game sees new hardware or a new driver.|Disabled, so a driver update doesn't wipe your tuning. Run this tool again after a new GPU.
+SkipIntro|Skip Intro|COMFORT|Skips the intro movie on launch.|On. Faster start-up.
+SkipSeasonIntroVideo|Skip Season Intro|COMFORT|Skips the season intro video.|On. Faster start-up.
+SkipSeasonVideo|Skip Season Video|COMFORT|Skips repeat season videos.|On. Faster start-up.
+MaxFpsInMenu|Menu FPS Limit|COMFORT|Frame cap while in menus.|120. Keeps menus smooth without heating up your GPU for nothing.
+MaxFpsOutOfFocus|Background FPS Limit|COMFORT|Frame cap when the game isn't the focused window.|30. Frees your PC for Discord, browser or OBS while tabbed out.
+RendererWorkerCount|Render Threads|FPS|Number of CPU threads the renderer uses for its job queue.|Physical cores minus one leaves a core free for Windows, Discord and audio, which keeps frame times steady.
+VideoMemoryScaleMP|Video Memory Budget|STABILITY|How much of your graphics card's memory the game is allowed to use.|Scaled to your VRAM: enough for streaming without running out and stuttering.
+TextureQuality|Texture Quality|CLARITY|Resolution of surface textures. In this file, a higher number means lower quality.|Set from your goal and VRAM. Textures cost video memory more than FPS.
+TextureFilter|Texture Filtering|CLARITY|Sharpness of surfaces viewed at an angle, like floors and walls.|2x for max FPS, 8x for visibility. 8x is almost free on modern GPUs.
+BulletImpacts|Bullet Impacts|CLARITY|Shows where bullets hit.|Max FPS: off. Visibility: on, so you can see where your shots land.
+NvidiaReflex|NVIDIA Reflex|LATENCY|Cuts the render queue so your clicks reach the screen faster.|Enabled. Lower input lag with no FPS cost.
+AmdAntilag2|AMD Anti-Lag 2|LATENCY|AMD's in-game latency reduction.|On for AMD graphics cards. Lower input lag.
+IntelXeLL|Intel XeLL|LATENCY|Intel's low latency mode.|On for Intel Arc graphics cards. Lower input lag.
+AATechniquePreferredMP|Anti-Aliasing / Upscaler|CLARITY|How edges are smoothed, and whether an upscaler is used.|Native SMAA keeps the sharpest image when your GPU can handle it; DLSS/FSR/XeSS when you need the headroom.
+AMDFidelityFX|AMD FidelityFX|CLARITY|AMD sharpening (CAS) or FSR upscaling. Works on any graphics card.|CAS with native SMAA restores crispness; FSR when an upscaler is needed.
+AMDContrastAdaptiveSharpeningStrength|CAS Sharpening|CLARITY|Strength of the AMD CAS sharpening filter.|Full strength to cancel out SMAA softness and make edges pop.
+DLSSPerfModeMP|DLSS Mode|FPS|How low DLSS renders before upscaling.|Balanced normally; Maximum Performance at 4K or on low-memory cards.
+DLSSModelUI|DLSS Model|CLARITY|The AI model DLSS uses to rebuild the image.|Transformer on RTX 40/50 for a sharper image; CNN on older RTX cards, where it's cheaper.
+XeSSQuality|XeSS Mode|FPS|How low XeSS renders before upscaling.|Balanced normally; Maximum Performance at 4K or on low-memory cards.
+AMDSuperResolution2Quality|FSR Mode|FPS|How low FSR renders before upscaling.|Balanced normally; Maximum Performance at 4K or on low-memory cards.
+CapFps|FPS Limit|STABILITY|Turns the in-game frame cap on or off.|On, just under your refresh rate, for even frame pacing; off above 300 Hz.
+MaxFpsInGame|In-Game FPS Cap|STABILITY|Maximum frames per second in matches.|A few frames under your refresh rate keeps G-Sync/FreeSync active and frame times smooth.
+HDR|HDR|CLARITY|High dynamic range output on HDR monitors.|Off by default for consistent, predictable brightness. Turn on if you have a good HDR monitor.
+ThxLssEnabled|THX Spatial (Speakers)|AUDIO|THX 3D processing designed for loudspeakers.|Off on headphones, so it doesn't fight the headphone 3D audio. On for speakers.
+ImmerseSpatialAudio|Embody Immerse|AUDIO|3D audio for headphones, so you can tell where sounds come from.|On for headphones: the best footstep direction and distance.
+WindowsSonicEnable|Windows Sonic|AUDIO|Windows' own 3D audio for headphones.|Off, so sound isn't processed for 3D twice.
+AudioWantedChannelsNumber|Audio Channels|AUDIO|Number of output channels the game mixes for.|2 (stereo) for headphones, which Immerse needs. System default for speakers.
+MonoSound|Mono Audio|AUDIO|Mixes everything into one channel.|Off. Mono destroys left/right direction.
+MusicVolume|Music Volume|AUDIO|Menu and in-match music.|Muted, so it never covers footsteps.
+WarTracksVolume|War Tracks|AUDIO|Music played by War Tracks in vehicles.|Muted for clean audio.
+TelescopeVolume|News Feed Audio|AUDIO|Audio from in-game news and messages of the day.|Muted.
+CinematicVolume|Cinematic Volume|AUDIO|Cutscene and cinematic audio.|Muted for multiplayer focus.
+MuteLicensedMusic|Licensed Music|AUDIO|Licensed songs in bundles and menus.|Muted. Also safer if you stream.
+VoiceVolume|Announcer / Dialogue|AUDIO|Announcer callouts and character voice lines.|Lower than full, so you still hear UAV and killstreak callouts without them covering footsteps.
+HitMarkersVolume|Hit Marker Volume|AUDIO|Volume of the hit marker sound.|Half volume. Clear feedback that doesn't drown out footsteps mid-fight.
+'@
+
+$SettingInfo = @{}
+foreach ($line in ($SettingInfoText -split "`r?`n")) {
+    $p = $line -split '\|'
+    if ($p.Count -ge 5) { $SettingInfo[$p[0].Trim()] = [pscustomobject]@{ Title = $p[1]; Impact = $p[2]; Info = $p[3]; Why = $p[4] } }
+}
+
+function Get-SettingInfo([string]$Key) {
+    $name = $Key -replace '@\d+$', ''
+    if ($SettingInfo.ContainsKey($name)) { return $SettingInfo[$name] }
+    return [pscustomobject]@{ Title = $name; Impact = ''; Info = 'Game setting.'; Why = 'Part of the max-FPS baseline.' }
+}
+
 function Get-Plan($Hw, $Prefs) {
     $c = [ordered]@{}
+    $why = @{}
     $notes = New-Object System.Collections.Generic.List[string]
 
     # --- Everything that costs FPS or clutters the screen, off (same pattern as FR33THY's BO6/BO7 configs)
@@ -282,28 +394,33 @@ function Get-Plan($Hw, $Prefs) {
     $cores = [int]$Hw.Cores
     if ($cores -lt 2) { $cores = 2 }
     $c['RendererWorkerCount@0'] = [string]([math]::Min(16, $cores - 1))
+    $why['RendererWorkerCount@0'] = "Your CPU has $cores cores, so $($c['RendererWorkerCount@0']) render threads leaves one core free for Windows, Discord and audio."
     if ($Hw.HybridIntel) { $notes.Add("Intel hybrid CPU: using P-cores ($($Hw.Cores)) for the render thread count.") }
 
     # --- GPU memory
     $vram = $Hw.VramGB
     if (-not $vram) { $vram = 8; $notes.Add('Video memory not detected - assumed 8 GB. Fix it on the left if wrong.') }
     $c['VideoMemoryScaleMP@0'] = $(if ($vram -ge 12) { '0.900000' } elseif ($vram -ge 8) { '0.800000' } else { '0.700000' })
+    $pct = $(if ($vram -ge 12) { 90 } elseif ($vram -ge 8) { 80 } else { 70 })
+    $why['VideoMemoryScaleMP@0'] = "Your card has $vram GB of video memory. Letting the game use $pct% gives it room to stream textures with headroom to spare."
 
     if ($Prefs.Goal -eq 'Visibility') {
         $c['TextureQuality@0'] = $(if ($vram -ge 12) { '1' } elseif ($vram -ge 8) { '2' } else { '3' })
         $c['TextureFilter@0']  = 'aniso 8x'
         $c['BulletImpacts@0']  = 'true'
+        $why['TextureQuality@0'] = "Visibility goal with $vram GB of video memory: the sharpest textures your card can hold without stutter (0 is best, 3 is lowest)."
     } else {
         $c['TextureQuality@0'] = '3'
         $c['TextureFilter@0']  = 'aniso 2x'
         $c['BulletImpacts@0']  = 'false'
+        $why['TextureQuality@0'] = 'Max FPS goal: lowest textures (3) for the most frame rate and the least video memory use.'
     }
 
     # --- Latency tech for the GPU vendor
     switch ($Hw.Vendor) {
-        'NVIDIA' { $c['NvidiaReflex@0'] = 'Enabled'; $c['AmdAntilag2@0'] = 'false'; $c['IntelXeLL@0'] = 'false' }
-        'AMD'    { $c['AmdAntilag2@0'] = 'true';     $c['IntelXeLL@0'] = 'false' }
-        'Intel'  { $c['IntelXeLL@0'] = 'true';       $c['AmdAntilag2@0'] = 'false' }
+        'NVIDIA' { $why['NvidiaReflex@0'] = "You have an NVIDIA card ($($Hw.GpuName)): Reflex cuts input lag at no FPS cost."; $c['NvidiaReflex@0'] = 'Enabled'; $c['AmdAntilag2@0'] = 'false'; $c['IntelXeLL@0'] = 'false' }
+        'AMD'    { $why['AmdAntilag2@0'] = "You have an AMD card ($($Hw.GpuName)): Anti-Lag 2 cuts input lag."; $c['AmdAntilag2@0'] = 'true';     $c['IntelXeLL@0'] = 'false' }
+        'Intel'  { $why['IntelXeLL@0'] = "You have an Intel Arc card ($($Hw.GpuName)): XeLL cuts input lag."; $c['IntelXeLL@0'] = 'true';       $c['AmdAntilag2@0'] = 'false' }
         default  { $notes.Add('GPU vendor unknown - latency settings left as they are.') }
     }
 
@@ -312,12 +429,15 @@ function Get-Plan($Hw, $Prefs) {
     if ($image -eq 'Auto') {
         if (($Hw.Width -and $Hw.Width -ge 3840) -or $vram -lt 8) { $image = 'Upscaler' } else { $image = 'Native' }
     }
+    $resText = $(if ($Hw.Width) { "$($Hw.Width)x$($Hw.Height)" } else { 'your resolution' })
     if ($image -eq 'Native') {
+        $why['AATechniquePreferredMP@0'] = "Your $($Hw.GpuName) with $vram GB can drive $resText natively, so SMAA plus CAS sharpening gives the sharpest image."
         $c['AATechniquePreferredMP@0'] = 'SMAA'
         $c['AMDFidelityFX@0'] = 'CAS'; $c['AMDFidelityFX@1'] = 'CAS'
         $c['AMDContrastAdaptiveSharpeningStrength@0'] = '1.000000'
     } else {
         $q = $(if (($Hw.Width -and $Hw.Width -ge 3840) -or $vram -lt 8) { 'Maximum Performance' } else { 'Balanced' })
+        $why['AATechniquePreferredMP@0'] = "At $resText with $vram GB of video memory, an upscaler gives you the FPS headroom. Quality set to $q."
         $upVendor = $Hw.Vendor
         if ($upVendor -eq 'NVIDIA' -and $Hw.GpuName -notmatch 'RTX') { $upVendor = 'Other' }   # GTX cards have no DLSS
         switch ($upVendor) {
@@ -349,6 +469,8 @@ function Get-Plan($Hw, $Prefs) {
         default {
             if ($Hw.RefreshHz -and $Hw.RefreshHz -ge 60 -and $Hw.RefreshHz -le 300) {
                 $c['CapFps@0'] = 'true'; $c['MaxFpsInGame@0'] = [string]([math]::Max(30, $Hw.RefreshHz - 3))
+                $why['MaxFpsInGame@0'] = "Your monitor runs at $($Hw.RefreshHz) Hz. Capping at $($c['MaxFpsInGame@0']) keeps G-Sync/FreeSync active and frame times even."
+                $why['CapFps@0'] = $why['MaxFpsInGame@0']
             } else {
                 $c['CapFps@0'] = 'false'
             }
@@ -374,10 +496,10 @@ function Get-Plan($Hw, $Prefs) {
 
     $notes.Add('After applying: open the game, Graphics > Restart Shaders Pre-Loading, then restart the game.')
     $notes.Add("If the game asks to 'Set Optimal Settings & Run In Safe Mode', choose No.")
-    [pscustomobject]@{ Changes = $c; Notes = $notes }
+    [pscustomobject]@{ Changes = $c; Notes = $notes; Why = $why }
 }
 
-function Get-PreviewRows($Files, $Changes) {
+function Get-PreviewRows($Files, $Changes, $Why) {
     $rows = New-Object System.Collections.Generic.List[object]
     foreach ($f in $Files) {
         $label = $(if ((Split-Path $f.Path -Leaf) -eq $SystemFileName) { 'Graphics' } else { 'Account' })
@@ -386,8 +508,12 @@ function Get-PreviewRows($Files, $Changes) {
             $cur = $f.Values[$k]; $new = $Changes[$k]
             if ($cur -ceq $new) { continue }
             $ok = Test-CodValue $f.Comments[$k] $new
+            $info = Get-SettingInfo $k
+            $reason = $info.Why
+            if ($Why -and $Why.ContainsKey($k)) { $reason = $Why[$k] }
             $rows.Add([pscustomobject]@{
-                File = $label; Setting = ($k -replace '@0$', ''); Key = $k
+                File = $label; Setting = $info.Title; Key = $k
+                Info = $info.Info; Impact = $info.Impact; Why = $reason
                 Current = $cur; New = $new; Path = $f.Path
                 Status = $(if ($ok) { 'change' } else { 'skipped (not valid in this version)' })
             })
@@ -468,11 +594,11 @@ if ($Silent) {
     $hw    = Get-HardwareInfo $Files[0]
     $prefs = New-DefaultPrefs
     $plan  = Get-Plan $hw $prefs
-    $rows  = Get-PreviewRows $Files $plan.Changes
+    $rows  = Get-PreviewRows $Files $plan.Changes $plan.Why
     Write-Host "$ToolName $ToolVersion" -ForegroundColor Cyan
     Write-Host ("CPU: {0} ({1} cores)  GPU: {2} [{3}, {4} GB]  Display: {5}x{6} @ {7} Hz  Drive: {8}" -f `
         $hw.CpuName, $hw.Cores, $hw.GpuName, $hw.Vendor, $hw.VramGB, $hw.Width, $hw.Height, $hw.RefreshHz, $hw.Drive)
-    $rows | Format-Table File, Setting, Current, New, Status -AutoSize | Out-String -Width 200 | Write-Host
+    $rows | Format-Table File, Setting, Key, Current, New, Status -AutoSize | Out-String -Width 200 | Write-Host
     $n = @($rows | Where-Object { $_.Status -eq 'change' }).Count
     if ($DryRun) { Write-Host "Dry run: $n settings would change. Nothing written."; exit 0 }
     $b = Invoke-Apply $Files $rows $prefs.ReadOnly
@@ -492,6 +618,74 @@ if (-not $Files) {
     [Windows.MessageBox]::Show($NoGameMsg, $ToolName, 'OK', 'Warning') | Out-Null
     exit 1
 }
+
+# Rich tooltip builder for the window's controls
+function ConvertTo-XmlText([string]$s) { [Security.SecurityElement]::Escape($s) }
+
+function New-TipXaml([string]$Title, [string]$Impact, [string]$Body, [string]$Rec) {
+    $pill = ''
+    if ($Impact) {
+        $pill = '<Border DockPanel.Dock="Right" CornerRadius="9" Padding="8,2" Margin="12,0,0,0" Background="#2A1206" BorderBrush="#FF5A1F" BorderThickness="1" VerticalAlignment="Top">' +
+                '<TextBlock Text="' + (ConvertTo-XmlText $Impact) + '" Foreground="#FF7B45" FontSize="10" FontWeight="Bold"/></Border>'
+    }
+    $recXaml = ''
+    if ($Rec) {
+        $recXaml = '<Border Margin="0,10,0,0" Padding="10,7" CornerRadius="7" Background="#0E2A1F" BorderBrush="#1F5E43" BorderThickness="1">' +
+                   '<TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#3DDC97"><Run FontWeight="Bold" Text="Recommended: "/><Run Text="' + (ConvertTo-XmlText $Rec) + '"/></TextBlock></Border>'
+    }
+    return '<StackPanel Width="320">' +
+           '<DockPanel Margin="0,0,0,6">' + $pill + '<TextBlock Text="' + (ConvertTo-XmlText $Title) + '" FontWeight="Bold" FontSize="14" Foreground="White" TextWrapping="Wrap"/></DockPanel>' +
+           '<TextBlock Text="' + (ConvertTo-XmlText $Body) + '" TextWrapping="Wrap" FontSize="12" Foreground="#C9CED6" LineHeight="18"/>' +
+           $recXaml + '</StackPanel>'
+}
+
+$Tips = @{
+    tbCpu    = New-TipXaml 'CPU' 'DETECTED' 'Your processor, as reported by Windows.' 'Nothing to change here.'
+    tbCores  = New-TipXaml 'Physical cores' 'FPS' 'Sets how many render threads the game uses: cores minus one, leaving a core free for Windows, Discord and audio. On Intel 12th-14th gen, count only the performance (P) cores.' 'Leave as detected. A 6-core CPU is 6, an 8-core CPU is 8.'
+    tbGpu    = New-TipXaml 'Graphics card' '' 'Used to pick the right upscaler (DLSS, FSR or XeSS) and the DLSS model for your card.' 'Leave as detected, unless it shows integrated graphics instead of your real card.'
+    cbVendor = New-TipXaml 'GPU vendor' 'LATENCY' 'Picks the latency tech for your card: NVIDIA Reflex, AMD Anti-Lag 2 or Intel XeLL.' 'Should match your graphics card.'
+    tbVram   = New-TipXaml 'Video memory' 'STABILITY' 'Decides the video memory budget, texture quality in Visibility mode, and whether an upscaler is needed.' 'Check Task Manager > Performance > GPU > Dedicated GPU memory.'
+    tbRes    = New-TipXaml 'Resolution' 'FPS' 'Your screen resolution. At 4K, Auto switches to an upscaler to keep FPS high.' 'Your monitor''s native resolution.'
+    tbHz     = New-TipXaml 'Refresh rate' 'STABILITY' 'Sets the FPS cap: refresh rate minus 3, which keeps G-Sync/FreeSync active and frame times even.' 'Your monitor''s maximum refresh rate. Check it is set in Windows Settings > Display > Advanced display.'
+    cbDrive  = New-TipXaml 'Game drive' 'STABILITY' 'Read from the game. Hard drives stream maps more slowly and stutter more.' 'Install Call of Duty on an SSD if you can.'
+    rbFps    = New-TipXaml 'Max FPS' 'BIG FPS' 'Lowest textures and 2x filtering, with every expensive effect off, for the highest frame rate.' 'Best for competitive play and high refresh rate monitors.'
+    rbVis    = New-TipXaml 'Visibility' 'CLARITY' 'Sharper textures scaled to your video memory, 8x filtering and bullet impacts on. Costs very little FPS on cards with 12 GB or more.' 'Great on strong GPUs: enemies and surfaces read better at range.'
+    cbImage  = New-TipXaml 'Image' 'CLARITY' 'Auto uses native SMAA with sharpening on most PCs, and switches to DLSS, FSR or XeSS at 4K or with under 8 GB of video memory.' 'Leave on Auto.'
+    cbCap    = New-TipXaml 'FPS cap' 'STABILITY' 'Auto caps 3 FPS under your refresh rate for smooth frame pacing. Uncapped gives the most FPS but less even frame times.' 'Auto.'
+    tbCap    = New-TipXaml 'Custom FPS cap' '' 'Your own frame limit between 30 and 300. Only used when FPS cap is set to Custom.' 'A few frames under your refresh rate.'
+    rbHead   = New-TipXaml 'Headphones' 'AUDIO' 'Embody Immerse 3D headphone audio on, THX speaker processing off, stereo output.' 'Best footstep direction. Also turn off Windows Sonic or Dolby Atmos for Headphones in Windows sound settings.'
+    rbSpk    = New-TipXaml 'Speakers' 'AUDIO' 'THX loudspeaker spatial audio on, headphone 3D off, channel count from Windows.' 'Only if you play on speakers or a soundbar.'
+    chkMusic = New-TipXaml 'Mute music' 'AUDIO' 'Mutes menu and match music, war tracks, licensed music, news feed audio and cinematics.' 'On, for clean footsteps.'
+    slAnn    = New-TipXaml 'Announcer and dialogue' 'AUDIO' 'Volume of announcer callouts (UAV, killstreaks) and character voice lines.' '30-50%: callouts stay clear without masking footsteps.'
+    slHit    = New-TipXaml 'Hit markers' 'AUDIO' 'Volume of the hit marker sound when your shots land.' '40-60%: clear feedback that doesn''t drown out footsteps.'
+    chkHdr   = New-TipXaml 'HDR' 'CLARITY' 'Turns on HDR output. Only works on an HDR monitor with HDR switched on in Windows.' 'Off, unless you have a proper HDR monitor (OLED or 600+ nits).'
+    chkPrio  = New-TipXaml 'High CPU priority' 'FPS' 'Windows always starts cod.exe at High priority, so background apps can''t steal CPU time from the game. Asks for admin once.' 'On. A small but real boost to 1% lows.'
+    chkRO    = New-TipXaml 'Lock graphics file' 'STABILITY' 'Makes the graphics settings file read-only, so the game can''t change or reset it.' 'Off, unless the game keeps resetting your settings. While locked, graphics changes made in game won''t save.'
+    cbBackups = New-TipXaml 'Backups' 'SAFETY' 'Every Apply saves your previous settings files here, newest first.' 'Pick one and press Restore to roll back.'
+    btnApply = New-TipXaml 'Apply' '' 'Backs up your current files, writes the changes and sets CPU priority. Close the game first.' 'Afterwards, in game: Graphics > Restart Shaders Pre-Loading, then restart.'
+}
+
+# Tooltip for each row of the change list (bound to the row's data)
+$RowTip = @'
+<StackPanel Width="340">
+  <DockPanel Margin="0,0,0,6">
+    <Border DockPanel.Dock="Right" CornerRadius="9" Padding="8,2" Margin="12,0,0,0" Background="#2A1206" BorderBrush="#FF5A1F" BorderThickness="1" VerticalAlignment="Top">
+      <TextBlock Text="{Binding Impact}" Foreground="#FF7B45" FontSize="10" FontWeight="Bold"/>
+    </Border>
+    <TextBlock Text="{Binding Setting}" FontWeight="Bold" FontSize="14" Foreground="White" TextWrapping="Wrap"/>
+  </DockPanel>
+  <TextBlock Text="{Binding Info}" TextWrapping="Wrap" FontSize="12" Foreground="#C9CED6" LineHeight="18"/>
+  <Border Margin="0,10,0,0" Padding="10,7" CornerRadius="7" Background="#1A1E26" BorderBrush="#272D38" BorderThickness="1">
+    <TextBlock TextWrapping="Wrap" FontSize="12">
+      <Run Text="{Binding Current, Mode=OneWay}" Foreground="#8C94A3"/><Run Text="   &#x2192;   " Foreground="#5D6573"/><Run Text="{Binding New, Mode=OneWay}" Foreground="#FF7B45" FontWeight="Bold"/>
+    </TextBlock>
+  </Border>
+  <Border Margin="0,6,0,0" Padding="10,7" CornerRadius="7" Background="#0E2A1F" BorderBrush="#1F5E43" BorderThickness="1">
+    <TextBlock TextWrapping="Wrap" FontSize="12" Foreground="#3DDC97"><Run FontWeight="Bold" Text="Why: "/><Run Text="{Binding Why, Mode=OneWay}"/></TextBlock>
+  </Border>
+  <TextBlock Text="{Binding Key}" Foreground="#5D6573" FontSize="10" Margin="0,8,0,0"/>
+</StackPanel>
+'@
 
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -527,6 +721,7 @@ if (-not $Files) {
 
     <!-- Text boxes -->
     <Style TargetType="TextBox">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="CaretBrush" Value="{StaticResource Ink}"/>
       <Setter Property="SelectionBrush" Value="{StaticResource Accent}"/>
       <Setter Property="Template"><Setter.Value>
@@ -560,6 +755,7 @@ if (-not $Files) {
       </Setter.Value></Setter>
     </Style>
     <Style TargetType="ComboBox">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Foreground" Value="{StaticResource Ink}"/>
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="ComboBox">
@@ -594,6 +790,7 @@ if (-not $Files) {
 
     <!-- Check boxes and radio buttons -->
     <Style TargetType="CheckBox">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="Margin" Value="0,5"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="CheckBox">
@@ -614,6 +811,7 @@ if (-not $Files) {
       </Setter.Value></Setter>
     </Style>
     <Style TargetType="RadioButton">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="Margin" Value="0,4,18,4"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="RadioButton">
@@ -644,6 +842,7 @@ if (-not $Files) {
       </Setter.Value></Setter>
     </Style>
     <Style TargetType="Slider">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Height" Value="24"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="Slider">
@@ -662,6 +861,7 @@ if (-not $Files) {
 
     <!-- Buttons -->
     <Style x:Key="BtnBase" TargetType="Button">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Foreground" Value="{StaticResource Ink}"/><Setter Property="Background" Value="#1A1E26"/>
       <Setter Property="BorderBrush" Value="#272D38"/><Setter Property="Padding" Value="16,8"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template"><Setter.Value>
@@ -689,6 +889,7 @@ if (-not $Files) {
     </Style>
 
     <Style x:Key="BtnBrand" TargetType="Button">
+      <Setter Property="ToolTipService.InitialShowDelay" Value="350"/><Setter Property="ToolTipService.ShowDuration" Value="60000"/>
       <Setter Property="Foreground" Value="White"/><Setter Property="FontWeight" Value="Bold"/><Setter Property="FontSize" Value="12"/>
       <Setter Property="Margin" Value="6,0,0,0"/><Setter Property="Cursor" Value="Hand"/>
       <Setter Property="Template"><Setter.Value>
@@ -722,7 +923,9 @@ if (-not $Files) {
       <Setter Property="Foreground" Value="{StaticResource Ink}"/>
       <Setter Property="Template"><Setter.Value>
         <ControlTemplate TargetType="ListViewItem">
-          <Border x:Name="Bd" Background="Transparent" BorderBrush="#1C2029" BorderThickness="0,0,0,1" Padding="0,5">
+          <Border x:Name="Bd" Background="Transparent" BorderBrush="#1C2029" BorderThickness="0,0,0,1" Padding="0,5"
+                  ToolTipService.InitialShowDelay="250" ToolTipService.ShowDuration="60000" ToolTipService.Placement="Mouse">
+            <Border.ToolTip><ToolTip>$RowTip</ToolTip></Border.ToolTip>
             <GridViewRowPresenter Columns="{TemplateBinding GridView.ColumnCollection}" Content="{TemplateBinding Content}"/>
           </Border>
           <ControlTemplate.Triggers>
@@ -758,7 +961,19 @@ if (-not $Files) {
       </Style.Triggers>
     </Style>
     <Style TargetType="ToolTip">
-      <Setter Property="Background" Value="#1A1E26"/><Setter Property="Foreground" Value="#ECEEF1"/><Setter Property="BorderBrush" Value="#FF5A1F"/>
+      <Setter Property="HasDropShadow" Value="False"/>
+      <Setter Property="Placement" Value="Right"/>
+      <Setter Property="Template"><Setter.Value>
+        <ControlTemplate TargetType="ToolTip">
+          <Border Margin="6,6,18,18" Background="#161A21" BorderBrush="#3A2418" BorderThickness="1" CornerRadius="12">
+            <Border.Effect><DropShadowEffect BlurRadius="20" ShadowDepth="5" Opacity="0.6" Color="Black"/></Border.Effect>
+            <Grid>
+              <Border Width="4" HorizontalAlignment="Left" CornerRadius="12,0,0,12" Background="#FF5A1F"/>
+              <ContentPresenter Margin="18,14,16,14" TextElement.Foreground="#ECEEF1" TextElement.FontSize="12"/>
+            </Grid>
+          </Border>
+        </ControlTemplate>
+      </Setter.Value></Setter>
     </Style>
   </Window.Resources>
 
@@ -835,21 +1050,21 @@ if (-not $Files) {
           </StackPanel>
           <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,6,0">
             <TextBlock Style="{StaticResource Lbl}" Text="CPU"/>
-            <TextBox x:Name="tbCpu" IsReadOnly="True"/>
+            <TextBox x:Name="tbCpu" IsReadOnly="True"><TextBox.ToolTip><ToolTip>$($Tips['tbCpu'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Physical cores (P-cores on Intel hybrid)"/>
-            <TextBox x:Name="tbCores"/>
+            <TextBox x:Name="tbCores"><TextBox.ToolTip><ToolTip>$($Tips['tbCores'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Graphics card"/>
-            <TextBox x:Name="tbGpu"/>
+            <TextBox x:Name="tbGpu"><TextBox.ToolTip><ToolTip>$($Tips['tbGpu'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="GPU vendor"/>
-            <ComboBox x:Name="cbVendor"><ComboBoxItem>NVIDIA</ComboBoxItem><ComboBoxItem>AMD</ComboBoxItem><ComboBoxItem>Intel</ComboBoxItem><ComboBoxItem>Unknown</ComboBoxItem></ComboBox>
+            <ComboBox x:Name="cbVendor"><ComboBox.ToolTip><ToolTip>$($Tips['cbVendor'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>NVIDIA</ComboBoxItem><ComboBoxItem>AMD</ComboBoxItem><ComboBoxItem>Intel</ComboBoxItem><ComboBoxItem>Unknown</ComboBoxItem></ComboBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Video memory (GB)"/>
-            <TextBox x:Name="tbVram"/>
+            <TextBox x:Name="tbVram"><TextBox.ToolTip><ToolTip>$($Tips['tbVram'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Resolution (e.g. 2560x1440)"/>
-            <TextBox x:Name="tbRes"/>
+            <TextBox x:Name="tbRes"><TextBox.ToolTip><ToolTip>$($Tips['tbRes'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Refresh rate (Hz)"/>
-            <TextBox x:Name="tbHz"/>
+            <TextBox x:Name="tbHz"><TextBox.ToolTip><ToolTip>$($Tips['tbHz'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Game drive"/>
-            <ComboBox x:Name="cbDrive"><ComboBoxItem>SSD</ComboBoxItem><ComboBoxItem>HDD</ComboBoxItem></ComboBox>
+            <ComboBox x:Name="cbDrive"><ComboBox.ToolTip><ToolTip>$($Tips['cbDrive'])</ToolTip></ComboBox.ToolTip><ComboBoxItem>SSD</ComboBoxItem><ComboBoxItem>HDD</ComboBoxItem></ComboBox>
             <TextBlock x:Name="tbRam" Style="{StaticResource Lbl}"/>
           </StackPanel></ScrollViewer>
         </DockPanel>
@@ -863,31 +1078,31 @@ if (-not $Files) {
           </StackPanel>
           <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel Margin="0,0,6,0">
             <TextBlock Style="{StaticResource Lbl}" Text="Goal"/>
-            <WrapPanel><RadioButton x:Name="rbFps" GroupName="goal" Content="Max FPS"/><RadioButton x:Name="rbVis" GroupName="goal" Content="Visibility"/></WrapPanel>
+            <WrapPanel><RadioButton x:Name="rbFps" GroupName="goal" Content="Max FPS"><RadioButton.ToolTip><ToolTip>$($Tips['rbFps'])</ToolTip></RadioButton.ToolTip></RadioButton><RadioButton x:Name="rbVis" GroupName="goal" Content="Visibility"><RadioButton.ToolTip><ToolTip>$($Tips['rbVis'])</ToolTip></RadioButton.ToolTip></RadioButton></WrapPanel>
             <TextBlock Style="{StaticResource Lbl}" Text="Image"/>
-            <ComboBox x:Name="cbImage">
+            <ComboBox x:Name="cbImage"><ComboBox.ToolTip><ToolTip>$($Tips['cbImage'])</ToolTip></ComboBox.ToolTip>
               <ComboBoxItem Tag="Auto">Auto (recommended)</ComboBoxItem>
               <ComboBoxItem Tag="Native">Native + SMAA + sharpening</ComboBoxItem>
               <ComboBoxItem Tag="Upscaler">Upscaler (DLSS / FSR / XeSS)</ComboBoxItem>
             </ComboBox>
             <TextBlock Style="{StaticResource Lbl}" Text="FPS cap"/>
-            <ComboBox x:Name="cbCap">
+            <ComboBox x:Name="cbCap"><ComboBox.ToolTip><ToolTip>$($Tips['cbCap'])</ToolTip></ComboBox.ToolTip>
               <ComboBoxItem Tag="Auto">Auto (refresh rate - 3)</ComboBoxItem>
               <ComboBoxItem Tag="Uncapped">Uncapped</ComboBoxItem>
               <ComboBoxItem Tag="Custom">Custom</ComboBoxItem>
             </ComboBox>
-            <TextBox x:Name="tbCap" IsEnabled="False" Margin="0,6,0,0" ToolTip="Custom FPS cap (30-300)"/>
+            <TextBox x:Name="tbCap" IsEnabled="False" Margin="0,6,0,0"><TextBox.ToolTip><ToolTip>$($Tips['tbCap'])</ToolTip></TextBox.ToolTip></TextBox>
             <TextBlock Style="{StaticResource Lbl}" Text="Audio"/>
-            <WrapPanel><RadioButton x:Name="rbHead" GroupName="aud" Content="Headphones"/><RadioButton x:Name="rbSpk" GroupName="aud" Content="Speakers"/></WrapPanel>
-            <CheckBox x:Name="chkMusic" Content="Mute music and war tracks"/>
+            <WrapPanel><RadioButton x:Name="rbHead" GroupName="aud" Content="Headphones"><RadioButton.ToolTip><ToolTip>$($Tips['rbHead'])</ToolTip></RadioButton.ToolTip></RadioButton><RadioButton x:Name="rbSpk" GroupName="aud" Content="Speakers"><RadioButton.ToolTip><ToolTip>$($Tips['rbSpk'])</ToolTip></RadioButton.ToolTip></RadioButton></WrapPanel>
+            <CheckBox x:Name="chkMusic" Content="Mute music and war tracks"><CheckBox.ToolTip><ToolTip>$($Tips['chkMusic'])</ToolTip></CheckBox.ToolTip></CheckBox>
             <TextBlock x:Name="lblAnn" Style="{StaticResource Lbl}"/>
-            <Slider x:Name="slAnn" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"/>
+            <Slider x:Name="slAnn" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slAnn'])</ToolTip></Slider.ToolTip></Slider>
             <TextBlock x:Name="lblHit" Style="{StaticResource Lbl}"/>
-            <Slider x:Name="slHit" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"/>
+            <Slider x:Name="slHit" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"><Slider.ToolTip><ToolTip>$($Tips['slHit'])</ToolTip></Slider.ToolTip></Slider>
             <TextBlock Style="{StaticResource Lbl}" Text="Extras"/>
-            <CheckBox x:Name="chkHdr" Content="HDR on (needs an HDR monitor)"/>
-            <CheckBox x:Name="chkPrio" Content="High CPU priority for cod.exe" ToolTip="Sets cod.exe to High priority every launch. Asks for admin."/>
-            <CheckBox x:Name="chkRO" Content="Lock graphics file (read-only)" ToolTip="Stops the game changing your graphics settings. Untick to change them in game."/>
+            <CheckBox x:Name="chkHdr" Content="HDR on (needs an HDR monitor)"><CheckBox.ToolTip><ToolTip>$($Tips['chkHdr'])</ToolTip></CheckBox.ToolTip></CheckBox>
+            <CheckBox x:Name="chkPrio" Content="High CPU priority for cod.exe"><CheckBox.ToolTip><ToolTip>$($Tips['chkPrio'])</ToolTip></CheckBox.ToolTip></CheckBox>
+            <CheckBox x:Name="chkRO" Content="Lock graphics file (read-only)"><CheckBox.ToolTip><ToolTip>$($Tips['chkRO'])</ToolTip></CheckBox.ToolTip></CheckBox>
           </StackPanel></ScrollViewer>
         </DockPanel>
       </Border>
@@ -909,13 +1124,13 @@ if (-not $Files) {
               <GridViewColumn Header="FILE" Width="80"><GridViewColumn.CellTemplate><DataTemplate>
                 <TextBlock Text="{Binding File}" Foreground="#8C94A3" Margin="4,0,0,0"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
               <GridViewColumn Header="SETTING" Width="210"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding Setting}" ToolTip="{Binding Setting}" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <TextBlock Text="{Binding Setting}" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
               <GridViewColumn Header="NOW" Width="130"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding Current}" ToolTip="{Binding Current}" Foreground="#8C94A3" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <TextBlock Text="{Binding Current}" Foreground="#8C94A3" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
               <GridViewColumn Header="NEW" Width="130"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding New}" ToolTip="{Binding New}" Foreground="#FF7B45" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <TextBlock Text="{Binding New}" Foreground="#FF7B45" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
               <GridViewColumn Header="STATUS" Width="80"><GridViewColumn.CellTemplate><DataTemplate>
-                <TextBlock Text="{Binding Status}" ToolTip="{Binding Status}" Foreground="#3DDC97" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
+                <TextBlock Text="{Binding Status}" Foreground="#3DDC97" TextTrimming="CharacterEllipsis"/></DataTemplate></GridViewColumn.CellTemplate></GridViewColumn>
             </GridView></ListView.View>
           </ListView>
           <Border Grid.Row="2" Background="#1A1E26" CornerRadius="8" Padding="12,10" Margin="0,10,0,0">
@@ -929,10 +1144,10 @@ if (-not $Files) {
     <Border Grid.Row="2" Background="#101318" BorderBrush="#272D38" BorderThickness="0,1,0,0" Padding="20,12">
       <DockPanel LastChildFill="False">
         <TextBlock DockPanel.Dock="Left" Text="BACKUPS" VerticalAlignment="Center" Foreground="#8C94A3" FontSize="11" FontWeight="Bold"/>
-        <ComboBox x:Name="cbBackups" DockPanel.Dock="Left" Width="200" Margin="10,0,0,0" VerticalAlignment="Center"/>
+        <ComboBox x:Name="cbBackups" DockPanel.Dock="Left" Width="200" Margin="10,0,0,0" VerticalAlignment="Center"><ComboBox.ToolTip><ToolTip>$($Tips['cbBackups'])</ToolTip></ComboBox.ToolTip></ComboBox>
         <Button x:Name="btnRestore" DockPanel.Dock="Left" Style="{StaticResource BtnBase}" Content="Restore" Margin="8,0,0,0"/>
         <Button x:Name="btnFolder" DockPanel.Dock="Left" Style="{StaticResource BtnBase}" Content="Open settings folder" Margin="8,0,0,0"/>
-        <Button x:Name="btnApply" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Content="APPLY"/>
+        <Button x:Name="btnApply" DockPanel.Dock="Right" Style="{StaticResource BtnPrimary}" Content="APPLY"><Button.ToolTip><ToolTip>$($Tips['btnApply'])</ToolTip></Button.ToolTip></Button>
         <StackPanel DockPanel.Dock="Right" VerticalAlignment="Center" Margin="0,0,16,0">
           <TextBlock x:Name="tbStatus" HorizontalAlignment="Right" FontWeight="SemiBold"/>
           <TextBlock Text="made by g1gGLe  &#183;  FiTH Gaming" HorizontalAlignment="Right" Foreground="#5D6573" FontSize="11" Margin="0,2,0,0"/>
@@ -1045,14 +1260,14 @@ function Update-Preview {
         $ui.lblHit.Text = "Hit marker volume: $([int]$ui.slHit.Value)%"
         $ui.tbCap.IsEnabled = ([string]$ui.cbCap.SelectedItem.Tag -eq 'Custom')
         $plan = Get-Plan (Read-Hardware) (Read-Prefs)
-        $script:Rows = Get-PreviewRows $script:Files $plan.Changes
+        $script:Rows = Get-PreviewRows $script:Files $plan.Changes $plan.Why
         # A DataTable binds cleanly in Windows PowerShell 5.1 (a PowerShell array here throws "Argument types do not match").
         $dt = New-Object System.Data.DataTable
-        foreach ($col in 'File', 'Setting', 'Current', 'New', 'Status') { [void]$dt.Columns.Add($col, [string]) }
+        $cols = 'File', 'Setting', 'Key', 'Current', 'New', 'Status', 'Info', 'Impact', 'Why'
+        foreach ($col in $cols) { [void]$dt.Columns.Add($col, [string]) }
         foreach ($r in $script:Rows) {
             $dr = $dt.NewRow()
-            $dr['File'] = [string]$r.File; $dr['Setting'] = [string]$r.Setting
-            $dr['Current'] = [string]$r.Current; $dr['New'] = [string]$r.New; $dr['Status'] = [string]$r.Status
+            foreach ($col in $cols) { $dr[$col] = [string]$r.$col }
             $dt.Rows.Add($dr)
         }
         $ui.lvPreview.ItemsSource = $dt.DefaultView
