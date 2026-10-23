@@ -33,7 +33,7 @@ Set-StrictMode -Version 2
 #  Game constants - edit this block to support a future release
 # ---------------------------------------------------------------------------------------------
 $ToolName        = 'g1gGLe''z MW4 Performance Tool'
-$ToolVersion     = '1.5.0'
+$ToolVersion     = '1.5.1'
 $ReleaseApi = 'https://api.github.com/repos/FiTH-g1gGLe/COD-MW4-Config-Tool/releases/latest'
 $ReleaseZip = 'MW4-Performance-Tool.zip'
 $Links = @{
@@ -87,6 +87,8 @@ function Read-CodFile([string]$Path) {
 $BinSettings = @(
     [pscustomobject]@{ Name = 'MinimapShape@0'; File = 'g.cod26.pm.1.0.b'; Id = [uint32]3438256713; Index = 0; Kind = 9
                        Map = [ordered]@{ 'style' = 'Square'; 'none' = 'Round' } }
+    [pscustomobject]@{ Name = 'MinimapRotation@1'; File = 'g.cod26.1.0.b'; Id = [uint32]3438256713; Index = 1; Kind = 9
+                       Map = [ordered]@{ 'none' = 'On'; 'rotation_disabled' = 'Off' } }
     [pscustomobject]@{ Name = 'EnemyColor@0'; File = 'g.cod26.1.0.b'; Id = [uint32]1535289133; Index = 0; Kind = 6
                        Map = [ordered]@{ '-2' = 'Default red'; '45' = 'Magenta' } }
 )
@@ -440,6 +442,7 @@ CinematicVolume|Cinematic Volume|AUDIO|Cutscene and cinematic audio.|Muted for m
 MuteLicensedMusic|Licensed Music|AUDIO|Licensed songs in bundles and menus.|Muted. Also safer if you stream.
 VoiceVolume|Announcer / Dialogue|AUDIO|Announcer callouts and character voice lines.|Lower than full, so you still hear UAV and killstreak callouts without them covering footsteps.
 MinimapShape|Minimap Shape|CLARITY|Square or round minimap.|Square shows the corners a round minimap cuts off: about 27% more of the map at a glance.
+MinimapRotation|Minimap Rotation|CLARITY|Whether the minimap turns with you or stays fixed north-up.|On: what's ahead of you on the minimap is always ahead of you on screen, so you read threats instantly without turning the map in your head.
 EnemyColor|Enemy Colour|CLARITY|Colour used for enemies on the minimap, nameplates and pings.|Magenta almost never appears on CoD maps, so enemy markers pop instead of blending into red and orange lighting. Only changed if you were still on the default red.
 HUDHorizBound|HUD Position (left/right)|CLARITY|How far the minimap, ammo counter and killfeed sit from the left and right screen edges. 1.0 is the edge, lower pulls them toward the centre.|Set from your HUD position slider.
 HUDVertBound|HUD Position (top/bottom)|CLARITY|How far the HUD sits from the top and bottom screen edges. 1.0 is the edge, lower pulls it toward the centre.|Set from your HUD position slider.
@@ -606,6 +609,7 @@ function Get-Plan($Hw, $Prefs) {
     $notes.Add("If the game asks to 'Set Optimal Settings & Run In Safe Mode', choose No.")
     # --- HUD: square minimap and magenta enemies for everyone; HUD position from the slider
     $c['MinimapShape@0'] = 'Square'
+    $c['MinimapRotation@1'] = 'On'
     $c['EnemyColor@0']   = 'Magenta'
     $onlyIf = @{ 'EnemyColor@0' = 'Default red' }   # never override a colour the player picked
     $pull = [int]$Prefs.HudPull
