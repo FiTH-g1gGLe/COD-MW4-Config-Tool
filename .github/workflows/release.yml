@@ -1,0 +1,37 @@
+# Builds a downloadable release every time a version tag (e.g. v1.3.1) is pushed.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build download zip
+        run: |
+          mkdir -p "dist/MW4 Performance Tool/assets"
+          cp MW4-Config-Tool.ps1 "Run MW4 Config Tool.bat" README.md "dist/MW4 Performance Tool/"
+          cp assets/logo.png assets/game.png "dist/MW4 Performance Tool/assets/"
+          cd dist && zip -r MW4-Performance-Tool.zip "MW4 Performance Tool"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: g1gGLe'z MW4 Performance Tool ${{ github.ref_name }}
+          files: dist/MW4-Performance-Tool.zip
+          generate_release_notes: true
+          body: |
+            ## Download
+            Grab **MW4-Performance-Tool.zip** below, unzip it anywhere, and double-click **Run MW4 Config Tool.bat**.
+
+            Launch Call of Duty once first so it creates its settings files, then close it before applying.
+
+            Join the squad: [Discord](https://discord.gg/Br7z7zBvFb) · [YouTube](https://www.youtube.com/user/FiTHGAMINGOFFICIAL) · [fithgaming.co.uk](http://fithgaming.co.uk/)
